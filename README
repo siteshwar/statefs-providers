@@ -1,0 +1,12 @@
+Basic set of StateFs providers
+
+This is the set of providers common for all Nemo Mobile
+platforms. This set is almost direct mapping of
+contextkit-plugins-nemo set and consists of:
+
+ - bluez provider
+ - ofono provider
+ - upower provider
+ - mce provider
+ - keyboard provider
+ - internet provider
