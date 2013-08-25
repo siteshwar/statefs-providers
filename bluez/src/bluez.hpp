@@ -14,30 +14,51 @@ namespace statefs { namespace bluez {
 typedef OrgBluezManagerInterface Manager;
 typedef OrgBluezDeviceInterface Device;
 
-class BlueZ : public statefs::Namespace, public QObject
+class BlueZ;
+
+class Bridge : public QObject
 {
     Q_OBJECT;
+public:
+
+    Bridge(QDBusConnection &bus);
+
+    virtual ~Bridge() {}
+
+private:
+
+    friend class BlueZ;
+
+    void createDevice(const QDBusObjectPath &);
+
+    void defaultAdapterChanged(const QDBusObjectPath &);
+
+    QDBusConnection &bus_;
+    std::unique_ptr<Manager> manager_;
+    std::unique_ptr<Device> device_;
+};
+
+class BlueZ : public statefs::Namespace
+{
 public:
 
     BlueZ(QDBusConnection &bus);
 
     virtual ~BlueZ() {}
     virtual void release() { }
-private slots:
-    // void adapterAdded(const QDBusObjectPath &);
-    // void adapterRemoved(const QDBusObjectPath &);
-    void defaultAdapterChanged(const QDBusObjectPath &);
 
 private:
-    QDBusConnection &bus_;
-    std::unique_ptr<Manager> manager_;
-    std::unique_ptr<Device> device_;
+
+    void defaultAdapterChanged(const QDBusObjectPath &);
+
+    QDBusObjectPath defaultAdapter_;
+    QMap<QString, setter_type> setters_for_props_;
+    Bridge bridge_;
+    //QDBusConnection &bus_;
     // setter_type set_is_enabled_;
     // setter_type set_is_visible_;
     // setter_type set_is_connected_;
-    QMap<QString, QDBusObjectPath> adapters_;
-    QDBusObjectPath defaultAdapter_;
-    QMap<QString, setter_type> setters_for_props_;
+    //QMap<QString, QDBusObjectPath> adapters_;
 };
 
 }}

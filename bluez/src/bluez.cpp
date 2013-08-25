@@ -23,7 +23,6 @@
  */
 
 #include "bluez.hpp"
-
 #include <iostream>
 
 QDBusArgument & operator <<(QDBusArgument &argument, BluezService const& src)
@@ -53,16 +52,21 @@ inline QDBusPendingReply<T> sync(QDBusPendingReply<T> &&reply)
     return reply;
 }
 
+Bridge::Bridge(QDBusConnection &bus)
+    : bus_(bus)
+    , manager_(new Manager("org.bluez", "/", bus))
+{}
+
 BlueZ::BlueZ(QDBusConnection &bus)
     : statefs::Namespace("Bluetooth")
-    , bus_(bus)
-    , manager_(new Manager("org.bluez", "/", bus))
+    , bridge_(bus)
 {
-    auto addProp = [this](std::string const &name
-                          , std::string const &defVal
-                          , QString const &bluezName) {
+    auto addProp = [this](char const *name
+                          , char const *defVal
+                          , char const *bluezName) {
         using statefs::Discrete;
-        auto prop = Discrete(name, defVal).create();
+        auto d = Discrete(name, defVal);
+        auto prop = d.create();
         *this << prop;
         setters_for_props_[bluezName] = setter(prop);
     };
@@ -70,26 +74,29 @@ BlueZ::BlueZ(QDBusConnection &bus)
     addProp("Visible", "0", "Discoverable");
     addProp("Connected", "0", "Connected");
 
-    auto adapterAdd = [this](const QDBusObjectPath &v) {
-        adapters_[v.path()] = v;
-    };
-    auto adapterRm = [this](const QDBusObjectPath &v) {
-        adapters_.remove(v.path());
-    };
-    connect(manager_.get(), &Manager::AdapterAdded, adapterAdd);
-    connect(manager_.get(), &Manager::AdapterRemoved, adapterRm);
-    connect(manager_.get(), &Manager::DefaultAdapterChanged
-            , this, &BlueZ::defaultAdapterChanged);
+    // auto adapterAdd = [this](const QDBusObjectPath &v) {
+    //     adapters_[v.path()] = v;
+    // };
+    // auto adapterRm = [this](const QDBusObjectPath &v) {
+    //     adapters_.remove(v.path());
+    // };
+    // connect(manager_.get(), &Manager::AdapterAdded, adapterAdd);
+    // connect(manager_.get(), &Manager::AdapterRemoved, adapterRm);
+    bridge_.connect(bridge_.manager_.get()
+                    , &Manager::DefaultAdapterChanged
+                    , [this](QDBusObjectPath const &p) {
+                        defaultAdapterChanged(p);
+                    });
 
-    auto adapters = sync(manager_->ListAdapters());
-    if (adapters.isError()) {
-        qWarning() << "ListAdapters error:" << adapters.error();
-    } else {
-        for (auto v : adapters.value())
-            adapterAdd(v);
-    }
+    // auto adapters = sync(bridge_.manager_->ListAdapters());
+    // if (adapters.isError()) {
+    //     qWarning() << "ListAdapters error:" << adapters.error();
+    // } else {
+    //     for (auto v : adapters.value())
+    //         adapterAdd(v);
+    // }
 
-    auto getDefault = sync(manager_->DefaultAdapter());
+    auto getDefault = sync(bridge_.manager_->DefaultAdapter());
     if (getDefault.isError()) {
         qWarning() << "DefaultAdapter error:" << getDefault.error();
     } else {
@@ -97,12 +104,17 @@ BlueZ::BlueZ(QDBusConnection &bus)
     }
 }
 
+void Bridge::createDevice(const QDBusObjectPath &v)
+{
+    device_.reset(new Device("org.bluez.Device", v.path(), bus_));
+}
+
 void BlueZ::defaultAdapterChanged(const QDBusObjectPath &v)
 {
     qDebug() << "DefaultAdapter" << v.path();
     defaultAdapter_ = v;
-    device_.reset(new Device("org.bluez.Device", v.path(), bus_));
 
+    bridge_.createDevice(v);
     auto strFromVarBool = [](QVariant const &v, bool cond1 = true) {
         return (cond1 && v.type() == QVariant::Bool && v.toBool()) ? "1" : "0";
     };
@@ -111,7 +123,7 @@ void BlueZ::defaultAdapterChanged(const QDBusObjectPath &v)
         return strFromVarBool(it.value(), it != props.end());
     };
 
-    auto res = sync(device_->GetProperties());
+    auto res = sync(bridge_.device_->GetProperties());
     auto props = res.value();
     for(auto it = setters_for_props_.begin();
         it != setters_for_props_.end(); ++it) {
@@ -124,7 +136,8 @@ void BlueZ::defaultAdapterChanged(const QDBusObjectPath &v)
         if (it != setters_for_props_.end())
             it.value()(strFromVarBool(value.variant()));
     };
-    connect(device_.get(), &Device::PropertyChanged, updateProp);
+    bridge_.connect(bridge_.device_.get(), &Device::PropertyChanged
+                    , updateProp);
 }
 
 class Provider : public statefs::AProvider

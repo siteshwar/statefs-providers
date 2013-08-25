@@ -3,6 +3,8 @@ find_package(Threads)
 find_package(Qt5Core REQUIRED)
 find_package(Qt5DBus REQUIRED)
 
+set(CMAKE_AUTOMOC TRUE)
+
 include_directories(
   ${Qt5Core_INCLUDES}
   ${Qt5DBus_INCLUDES}
@@ -27,7 +29,7 @@ qt5_add_dbus_interface(SRC ${DEV_IF} device)
 
 add_library(provider-bluez SHARED
   ${SRC}
-  provider.cpp
+  bluez.cpp
   )
 
 target_link_libraries(provider-bluez
