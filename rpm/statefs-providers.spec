@@ -31,10 +31,13 @@ Obsoletes: contextkit-maemo <= %{maemo_ver}
 Provides: contextkit-maemo = %{maemo_ver1}
 Obsoletes: contextkit-meego <= %{meego_ver}
 Provides: contextkit-meego = %{meego_ver1}
+Obsoletes: statefs-contextkit-provider <= %{ckit_version}
+Provides: statefs-contextkit-provider = %{ckit_version}
 %description %{p_common}
 %{summary}
 
 %define p_bluez -n statefs-provider-bluez
+%define p_upower -n statefs-provider-upower
 
 %package %{p_bluez}
 Summary: BlueZ statefs provider
@@ -49,11 +52,25 @@ Provides: statefs-provider-bluetooth = %{version}
 %description %{p_bluez}
 %{summary}
 
+%package %{p_upower}
+Summary: Upower statefs provider
+Group: Applications/System
+Requires: statefs-providers-common = %{version}
+Requires: statefs-loader-qt5
+Requires: upower >= 0.9.18
+Obsoletes: contextkit-meego-battery-upower <= %{meego_ver}
+Provides: contextkit-meego-battery-upower = %{meego_ver1}
+Obsoletes: contextkit-plugin-upower <= %{ckit_version}
+Provides: contextkit-plugin-upower = %{ckit_version}
+Provides: statefs-provider-power = %{version}
+%description %{p_upower}
+%{summary}
+
 %prep
 %setup -q
 
 %build
-%cmake
+%cmake -DSTATEFS_QT_VERSION=%{version}
 make %{?jobs:-j%jobs}
 
 %install
