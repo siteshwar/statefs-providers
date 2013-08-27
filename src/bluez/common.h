@@ -6,11 +6,15 @@
 #include <QtCore/QMetaType>
 #include <QtDBus/QtDBus>
 
-struct BluezService
-{
-    unsigned i;
-    QString s;
-};
+#include <tuple>
+#include <statefs/qt/dbus.hpp>
+
+typedef std::tuple<unsigned, QString> BluezService;
+/* struct BluezService */
+/* { */
+/*     unsigned i; */
+/*     QString s; */
+/* }; */
 
 Q_DECLARE_METATYPE(BluezService);
 

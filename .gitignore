@@ -7,3 +7,9 @@ Makefile
 cscope*
 *.so
 *.moc
+moc*.*
+*automoc.*
+*.pc
+# generated for dbus
+*_interface.cpp
+*_interface.h

@@ -1,6 +1,10 @@
 PROJECT(statefs-provider-ofono)
 cmake_minimum_required(VERSION 2.8)
 
+IF(NOT DEFINED STATEFS_QT_VERSION)
+MESSAGE(FATAL_ERROR "Define STATEFS_QT_VERSION")
+ENDIF(NOT DEFINED STATEFS_QT_VERSION)
+
 IF(CMAKE_SIZEOF_VOID_P EQUAL 4)
   SET(LIB_SUFFIX "")
 ELSE(CMAKE_SIZEOF_VOID_P EQUAL 4)
@@ -25,5 +29,12 @@ link_directories(
   ${STATEFS_LIBS}
 )
 
-add_subdirectory(bluez/src)
+find_package(Threads)
+
+find_package(Qt5Core REQUIRED)
+find_package(Qt5DBus REQUIRED)
+
+add_subdirectory(src/util)
+add_subdirectory(src/bluez)
+add_subdirectory(src/upower)
 
