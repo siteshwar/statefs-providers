@@ -1,5 +1,7 @@
 %define ckit_version 0.7.41
+%define ckit_version1 0.7.42
 %define ckit_statefs_version 0.2.29
+%define ckit_statefs_version1 0.2.30
 %define maemo_ver 0.7.30
 %define maemo_ver1 0.7.31
 %define meego_ver 0.1.0
@@ -32,7 +34,7 @@ Provides: contextkit-maemo = %{maemo_ver1}
 Obsoletes: contextkit-meego <= %{meego_ver}
 Provides: contextkit-meego = %{meego_ver1}
 Obsoletes: statefs-contextkit-provider <= %{ckit_statefs_version}
-Provides: statefs-contextkit-provider = %{ckit_statefs_version}
+Provides: statefs-contextkit-provider = %{ckit_statefs_version1}
 %description %{p_common}
 %{summary}
 
@@ -73,9 +75,9 @@ Requires(postun): /sbin/ldconfig
 Requires: statefs-providers-common = %{version}
 Requires: statefs-loader-qt5
 Obsoletes: contextkit-plugin-bluez <= %{ckit_version}
-Provides: contextkit-plugin-bluez = %{ckit_version}
+Provides: contextkit-plugin-bluez = %{ckit_version1}
 Obsoletes: contextkit-plugin-bluetooth <= %{ckit_version}
-Provides: contextkit-plugin-bluetooth = %{ckit_version}
+Provides: contextkit-plugin-bluetooth = %{ckit_version1}
 Provides: statefs-provider-bluetooth = %{version}
 %description %{p_bluez}
 %{summary}
@@ -91,7 +93,9 @@ Requires: upower >= 0.9.18
 Obsoletes: contextkit-meego-battery-upower <= %{meego_ver}
 Provides: contextkit-meego-battery-upower = %{meego_ver1}
 Obsoletes: contextkit-plugin-upower <= %{ckit_version}
-Provides: contextkit-plugin-upower = %{ckit_version}
+Provides: contextkit-plugin-upower = %{ckit_version1}
+Obsoletes: contextkit-plugin-power <= %{ckit_version}
+Provides: contextkit-plugin-power = %{ckit_version1}
 Provides: statefs-provider-power = %{version}
 %description %{p_upower}
 %{summary}
