@@ -39,6 +39,8 @@ Provides: statefs-contextkit-provider = %{ckit_statefs_version}
 %package -n statefs-qt5
 Summary: StateFS Qt5 bindings
 Group: System Environment/Libraries
+Requires(post): /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
 Requires: statefs >= 0.3.6
 %description -n statefs-qt5
 %{summary}
@@ -66,6 +68,8 @@ BuildRequires: graphviz
 %package %{p_bluez}
 Summary: BlueZ statefs provider
 Group: Applications/System
+Requires(post): /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
 Requires: statefs-providers-common = %{version}
 Requires: statefs-loader-qt5
 Obsoletes: contextkit-plugin-bluez <= %{ckit_version}
@@ -79,6 +83,8 @@ Provides: statefs-provider-bluetooth = %{version}
 %package %{p_upower}
 Summary: Upower statefs provider
 Group: Applications/System
+Requires(post): /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
 Requires: statefs-providers-common = %{version}
 Requires: statefs-loader-qt5
 Requires: upower >= 0.9.18
@@ -116,6 +122,9 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 %{_libdir}/libstatefs-qt5.so
 
+%post -n statefs-qt5 -p /sbin/ldconfig
+%postun -n statefs-qt5 -p /sbin/ldconfig
+
 %files -n statefs-qt5-devel
 %defattr(-,root,root,-)
 %{_qt5_headerdir}/statefs/qt/*.hpp
@@ -130,11 +139,19 @@ rm -rf %{buildroot}
 %{_libdir}/statefs/libprovider-bluez.so
 
 %post %{p_bluez}
+/sbin/ldconfig
 statefs register %{_libdir}/statefs/libprovider-bluez.so --statefs-type=qt5 || :
+
+%postun %{p_bluez}
+/sbin/ldconfig
 
 %files %{p_upower}
 %defattr(-,root,root,-)
 %{_libdir}/statefs/libprovider-upower.so
 
 %post %{p_upower}
+/sbin/ldconfig
 statefs register %{_libdir}/statefs/libprovider-upower.so --statefs-type=qt5 || :
+
+%postun %{p_upower}
+/sbin/ldconfig
