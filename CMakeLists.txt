@@ -21,13 +21,19 @@ set(CMAKE_CXX_FLAGS
 
 pkg_check_modules(STATEFS statefs-cpp REQUIRED)
 
-INCLUDE_DIRECTORIES(
+include_directories(
   ${STATEFS_INCLUDES}
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 link_directories(
   ${STATEFS_LIBS}
 )
+
+install(DIRECTORY include/statefs DESTINATION include/qt5)
+
+add_custom_target(doc
+  COMMAND doxygen ${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile)
 
 find_package(Threads)
 
