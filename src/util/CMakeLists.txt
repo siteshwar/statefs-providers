@@ -1,8 +1,8 @@
 set(CMAKE_AUTOMOC TRUE)
 
 include_directories(
-  ${Qt5Core_INCLUDES}
-  ${Qt5DBus_INCLUDES}
+  ${Qt5Core_INCLUDE_DIRS}
+  ${Qt5DBus_INCLUDE_DIRS}
 )
 
 link_directories(
@@ -17,6 +17,8 @@ add_library(statefs-qt5
 
 target_link_libraries(statefs-qt5
   ${Qt5Core_LIBRARIES}
+  ${Qt5DBus_LIBRARIES}
+  ${STATEFS_LIBRARIES}
 )
 
 configure_file(statefs-qt5.pc.in statefs-qt5.pc @ONLY)

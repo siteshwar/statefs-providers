@@ -1,13 +1,8 @@
-find_package(Threads)
-
-find_package(Qt5Core REQUIRED)
-find_package(Qt5DBus REQUIRED)
-
 set(CMAKE_AUTOMOC TRUE)
 
 include_directories(
-  ${Qt5Core_INCLUDES}
-  ${Qt5DBus_INCLUDES}
+  ${Qt5Core_INCLUDE_DIRS}
+  ${Qt5DBus_INCLUDE_DIRS}
 )
 
 link_directories(

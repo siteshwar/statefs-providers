@@ -1,4 +1,4 @@
-PROJECT(statefs-provider-ofono)
+PROJECT(statefs-providers)
 cmake_minimum_required(VERSION 2.8)
 
 IF(NOT DEFINED STATEFS_QT_VERSION)
@@ -22,8 +22,8 @@ set(CMAKE_CXX_FLAGS
 pkg_check_modules(STATEFS statefs-cpp REQUIRED)
 
 include_directories(
-  ${STATEFS_INCLUDES}
   ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${STATEFS_INCLUDES}
 )
 
 link_directories(
