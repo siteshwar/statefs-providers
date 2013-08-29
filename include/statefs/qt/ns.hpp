@@ -34,6 +34,7 @@ public:
     virtual void release() { }
 
 protected:
+    void addProperty(char const *, char const *);
     void addProperty(char const *, char const *, char const *);
     std::unique_ptr<PropertiesSource> src_;
 

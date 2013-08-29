@@ -43,6 +43,12 @@ void Namespace::addProperty(char const *name
     setters_for_props_[src_name] = setter(prop);
 }
 
+void Namespace::addProperty(char const *name
+                            , char const *def_val)
+{
+    addProperty(name, def_val, name);
+}
+
 void PropertiesSource::setProperties(QVariantMap const &src)
 {
     target_->setProperties(src);
