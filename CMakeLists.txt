@@ -43,4 +43,5 @@ find_package(Qt5DBus REQUIRED)
 add_subdirectory(src/util)
 add_subdirectory(src/bluez)
 add_subdirectory(src/upower)
+add_subdirectory(tests)
 
