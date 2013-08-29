@@ -38,24 +38,23 @@ static char const *service_name = "org.freedesktop.UPower";
 Bridge::Bridge(PowerNs *ns, QDBusConnection &bus)
     : PropertiesSource(ns)
     , bus_(bus)
-    , manager_(new Manager(service_name, "/", bus))
 {}
+    , manager_(new Manager(service_name, "/org/freedesktop/UPower", bus))
 
 void Bridge::init()
 {
     auto updateAllProperties = [this]() {
-        QVariantMap props;
         using namespace std::placeholders;
         auto set = std::bind(&PropertiesSource::updateProperty, this, _1, _2);
-        set("ChargePercentage", device_->capacity());
+        set("ChargePercentage", device_->percentage());
         set("OnBattery", manager_->onBattery());
         set("LowBattery", manager_->onLowBattery());
         set("TimeUntilLow", device_->timeToEmpty());
         set("TimeUntilFull", device_->timeToFull());
+        set("Energy", device_->energy());
+        set("EnergyFull", device_->energyFull());
         DeviceState state = (DeviceState)device_->state();
         set("IsCharging", state == Charging || state == FullyCharged);
-        setProperties(props);
-        
     };
 
     auto devices = sync(manager_->EnumerateDevices()).value();
@@ -77,12 +76,14 @@ PowerNs::PowerNs(QDBusConnection &bus)
     : Namespace("Battery", std::unique_ptr<PropertiesSource>
                 (new Bridge(this, bus)))
 {
-    addProperty("ChargePercentage", "0", "ChargePercentage");
-    addProperty("OnBattery", "1", "OnBattery");
-    addProperty("LowBattery", "0", "LowBattery");
-    addProperty("TimeUntilLow", "0", "TimeUntilLow");
-    addProperty("TimeUntilFull", "0", "TimeUntilFull");
-    addProperty("IsCharging", "0", "IsCharging");
+    addProperty("ChargePercentage", "100");
+    addProperty("OnBattery", "1");
+    addProperty("LowBattery", "0");
+    addProperty("TimeUntilLow", "0");
+    addProperty("TimeUntilFull", "0");
+    addProperty("IsCharging", "0");
+    addProperty("Energy", "1000000");
+    addProperty("EnergyFull", "1000000");
     src_->init();
 }
 
