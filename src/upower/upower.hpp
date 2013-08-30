@@ -52,8 +52,13 @@ public:
 
 private:
 
+    void initManager();
+    void updateAllProperties();
+    bool findBattery();
+
     QDBusConnection &bus_;
     QDBusObjectPath defaultAdapter_;
+    std::unique_ptr<QDBusServiceWatcher> watcher_;
     std::unique_ptr<Manager> manager_;
     std::unique_ptr<Device> device_;
 };
