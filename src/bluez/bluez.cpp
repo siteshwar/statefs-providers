@@ -95,8 +95,8 @@ BlueZ::BlueZ(QDBusConnection &bus)
 {
     addProperty("Enabled", "0", "Powered");
     addProperty("Visible", "0", "Discoverable");
-    addProperty("Connected", "0", "Connected");
-    addProperty("Address", "00:00:00:00:00:00", "Address");
+    addProperty("Connected", "0");
+    addProperty("Address", "00:00:00:00:00:00");
     src_->init();
 }
 
