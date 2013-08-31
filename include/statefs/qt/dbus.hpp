@@ -4,6 +4,7 @@
 #include <QDBusPendingReply>
 #include <stdexcept>
 #include <tuple>
+#include <memory>
 
 namespace statefs { namespace qt {
 
@@ -20,26 +21,40 @@ QDBusPendingReply<T> sync(QDBusPendingReply<T> &&reply)
 template <size_t Pos, typename T>
 struct TupleDBus
 {
-    static void output(QDBusArgument &argument, T &src)
+    static void output(QDBusArgument &argument, T const &src)
     {
         argument << std::get<std::tuple_size<T>::value - Pos>(src);
         TupleDBus<Pos - 1, T>::output(argument, src);
     }
-};
 
+    static void input(QDBusArgument const &argument, T &dst)
+    {
+        argument >> std::get<std::tuple_size<T>::value - Pos>(dst);
+        TupleDBus<Pos - 1, T>::input(argument, dst);
+    }
+};
 
 template <typename T>
 struct TupleDBus<0, T>
 {
-    static void output(QDBusArgument &argument, T &src)
+    static void output(QDBusArgument &, T const &)
     {
-        argument << std::get<std::tuple_size<T>::value>(src);
+        // do nothing, after the last element
+    }
+
+    static void input(QDBusArgument const &, T &)
+    {
+        // do nothing, after the last element
     }
 };
 
+
+}}
+
 template <typename ... Args>
-QDBusArgument & operator << (QDBusArgument &argument, std::tuple<Args...> &src)
+QDBusArgument & operator << (QDBusArgument &argument, std::tuple<Args...> const &src)
 {
+    using statefs::qt::TupleDBus;
     typedef std::tuple<Args...> tuple_type;
     argument.beginStructure();
     TupleDBus<std::tuple_size<tuple_type>::value
@@ -48,6 +63,16 @@ QDBusArgument & operator << (QDBusArgument &argument, std::tuple<Args...> &src)
     return argument;
 }
 
-}}
+template <typename ... Args>
+QDBusArgument const& operator >> (QDBusArgument const &argument, std::tuple<Args...> &dst)
+{
+    using statefs::qt::TupleDBus;
+    typedef std::tuple<Args...> tuple_type;
+    argument.beginStructure();
+    TupleDBus<std::tuple_size<tuple_type>::value
+              , tuple_type>::input(argument, dst);
+    argument.endStructure();
+    return argument;
+}
 
 #endif // _STATEFS_QT_DBUS_HPP_
