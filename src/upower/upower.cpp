@@ -23,6 +23,7 @@
  */
 
 #include "upower.hpp"
+#include <math.h>
 #include <iostream>
 #include <statefs/qt/dbus.hpp>
 
@@ -45,7 +46,9 @@ void Bridge::updateAllProperties()
 {
     using namespace std::placeholders;
     auto set = std::bind(&PropertiesSource::updateProperty, this, _1, _2);
-    set("ChargePercentage", device_->percentage());
+    auto c = device_->capacity();
+    set("ChargePercentage", round(c));
+    set("Capacity", c);
     set("OnBattery", manager_->onBattery());
     set("LowBattery", manager_->onLowBattery());
     set("TimeUntilLow", device_->timeToEmpty());
@@ -97,14 +100,15 @@ PowerNs::PowerNs(QDBusConnection &bus)
     : Namespace("Battery", std::unique_ptr<PropertiesSource>
                 (new Bridge(this, bus)))
 {
-    addProperty("ChargePercentage", "100");
+    addProperty("ChargePercentage", "87");
+    addProperty("Capacity", "87");
     addProperty("OnBattery", "1");
     addProperty("LowBattery", "0");
-    addProperty("TimeUntilLow", "0");
+    addProperty("TimeUntilLow", "878787");
     addProperty("TimeUntilFull", "0");
     addProperty("IsCharging", "0");
-    addProperty("Energy", "1000000");
-    addProperty("EnergyFull", "1000000");
+    addProperty("Energy", "7");
+    addProperty("EnergyFull", "8");
     src_->init();
 }
 
