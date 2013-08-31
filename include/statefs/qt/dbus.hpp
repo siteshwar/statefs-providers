@@ -2,6 +2,7 @@
 #define _STATEFS_QT_DBUS_HPP_
 
 #include <QDBusPendingReply>
+#include <QDBusServiceWatcher>
 #include <stdexcept>
 #include <tuple>
 #include <memory>
@@ -48,6 +49,38 @@ struct TupleDBus<0, T>
     }
 };
 
+
+class ServiceWatch : public QObject
+{
+    Q_OBJECT;
+public:
+    ServiceWatch(QDBusConnection &bus, QString const &service)
+        : bus_(bus), service_(service)
+    {}
+
+    virtual ~ServiceWatch() {}
+
+    template <typename RegT, typename UnregT>
+    void init(RegT onRegister, UnregT onUnregister)
+    {
+        if (watcher_)
+            return;
+
+        watcher_.reset
+            (new QDBusServiceWatcher
+             (service_, bus_, QDBusServiceWatcher::WatchForRegistration));
+
+        connect(watcher_.get(), &QDBusServiceWatcher::serviceRegistered
+                , onRegister);
+        connect(watcher_.get(), &QDBusServiceWatcher::serviceUnregistered
+                , onUnregister);
+    }
+
+private:
+    QDBusConnection &bus_;
+    QString service_;
+    std::unique_ptr<QDBusServiceWatcher> watcher_;
+};
 
 }}
 
