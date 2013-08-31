@@ -46,8 +46,11 @@ find_package(Threads)
 find_package(Qt5Core REQUIRED)
 find_package(Qt5DBus REQUIRED)
 
+set(STATEFS_QT_HEADERS ${CMAKE_SOURCE_DIR}/include/statefs/qt/dbus.hpp)
+
 add_subdirectory(src/util)
 add_subdirectory(src/bluez)
 add_subdirectory(src/upower)
+add_subdirectory(src/connman)
 add_subdirectory(tests)
 

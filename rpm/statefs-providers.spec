@@ -66,6 +66,7 @@ BuildRequires: graphviz
 
 %define p_bluez -n statefs-provider-bluez
 %define p_upower -n statefs-provider-upower
+%define p_connman -n statefs-provider-connman
 
 %package %{p_bluez}
 Summary: BlueZ statefs provider
@@ -98,6 +99,22 @@ Obsoletes: contextkit-plugin-power <= %{ckit_version}
 Provides: contextkit-plugin-power = %{ckit_version1}
 Provides: statefs-provider-power = %{version}
 %description %{p_upower}
+%{summary}
+
+%package %{p_connman}
+Summary: ConnMan statefs provider
+Group: Applications/System
+Requires(post): /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
+Requires: statefs-providers-common = %{version}
+Requires: statefs-loader-qt5
+Requires: connman >= 1.15
+Obsoletes: contextkit-meego-internet <= %{meego_ver}
+Provides: contextkit-meego-internet = %{meego_ver1}
+Obsoletes: contextkit-plugin-connman <= %{ckit_version}
+Provides: contextkit-plugin-connman = %{ckit_version1}
+Provides: statefs-provider-internet = %{version}
+%description %{p_connman}
 %{summary}
 
 %prep
@@ -158,4 +175,15 @@ statefs register %{_libdir}/statefs/libprovider-bluez.so --statefs-type=qt5 || :
 statefs register %{_libdir}/statefs/libprovider-upower.so --statefs-type=qt5 || :
 
 %postun %{p_upower}
+/sbin/ldconfig
+
+%files %{p_connman}
+%defattr(-,root,root,-)
+%{_libdir}/statefs/libprovider-connman.so
+
+%post %{p_connman}
+/sbin/ldconfig
+statefs register %{_libdir}/statefs/libprovider-connman.so --statefs-type=qt5 || :
+
+%postun %{p_connman}
 /sbin/ldconfig
