@@ -4,7 +4,7 @@
 #include <statefs/qt/util.hpp>
 #include <statefs/property.hpp>
 
-#include <QMap>
+#include <map>
 #include <QString>
 #include <QVariant>
 
@@ -19,6 +19,7 @@ public:
     virtual ~PropertiesSource() {}
     virtual void init() =0;
     void setProperties(QVariantMap const &);
+    void setProperties(std::map<QString, QVariant> const &);
     void updateProperty(const QString &, const QVariant &);
 private:
     Namespace *target_;
@@ -41,11 +42,12 @@ protected:
 private:
 
     void setProperties(QVariantMap const &);
+    void setProperties(std::map<QString, QVariant> const &);
     void updateProperty(const QString &, const QVariant &);
 
     friend class PropertiesSource;
 
-    QMap<QString, setter_type> setters_for_props_;
+    std::map<QString, setter_type> setters_for_props_;
 };
 
 }}
