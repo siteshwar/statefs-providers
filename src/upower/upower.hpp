@@ -55,6 +55,7 @@ private:
     void initManager();
     void updateAllProperties();
     bool findBattery();
+    void watchUPower();
 
     QDBusConnection &bus_;
     QDBusObjectPath defaultAdapter_;

@@ -61,13 +61,18 @@ void Bridge::updateAllProperties()
 
 bool Bridge::findBattery()
 {
+    qDebug() << "Get devices";
     auto devices = sync(manager_->EnumerateDevices()).value();
     for (auto it = devices.begin(); it != devices.end(); ++it) {
 		std::unique_ptr<Device> device(new Device(service_name, it->path(), bus_));
 		auto dev_type = (DeviceType)device->type();
 
+        qDebug() << "UPower dev " << dev_type << ", E:" << device->energyFull()
+                 << " V:" << device->voltage()
+                 << " = " << device->nativePath();
 		if(dev_type == Battery && device->energyFull() > 0 && device->voltage() > 0)
 		{
+            qDebug() << " is battery";
 			device_ = std::move(device);
             updateAllProperties();
             connect(device_.get(), &Device::Changed
@@ -79,21 +84,35 @@ bool Bridge::findBattery()
     return false;
 }
 
+void Bridge::watchUPower()
+{
+    if (watcher_)
+        return;
+
+    watcher_.reset
+        (new QDBusServiceWatcher(service_name, bus_));
+    connect(watcher_.get(), &QDBusServiceWatcher::serviceRegistered
+            , [this]() {
+                qDebug() << "Got UPower";
+                init();
+            });
+    connect(watcher_.get(), &QDBusServiceWatcher::serviceUnregistered
+            , [this]() {
+                qDebug() << "Lost UPower";
+                device_.reset();
+                manager_.reset();
+            });
+    connect(watcher_.get(), &QDBusServiceWatcher::serviceOwnerChanged
+            , [this](const QString &serviceName, const QString &oldOwner, const QString &newOwner) {
+                qDebug() << serviceName << " owner is changed " << oldOwner << "->" << newOwner;
+            });
+}
+
 void Bridge::init()
 {
     manager_.reset(new Manager(service_name, "/org/freedesktop/UPower", bus_));
-    if (manager_->isValid()) {
-        if (findBattery())
-            updateAllProperties();
-    } else {
-        qDebug() << "No " << service_name << " yet, waiting";
-        watcher_.reset
-            (new QDBusServiceWatcher
-             (service_name, bus_, QDBusServiceWatcher::WatchForRegistration
-              , this));
-        connect(watcher_.get(), &QDBusServiceWatcher::serviceRegistered
-                , [this]() { init(); });
-    }
+    if (!findBattery())
+        watchUPower();
 }
 
 PowerNs::PowerNs(QDBusConnection &bus)
