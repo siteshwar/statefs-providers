@@ -24,9 +24,11 @@ set_source_files_properties(${MGR_IF} ${DEV_IF}
 
 qt5_add_dbus_interface(SRC ${MGR_IF} manager_interface)
 qt5_add_dbus_interface(SRC ${DEV_IF} device_interface)
+#qt5_wrap_cpp(STATEFS_QT_SRC ${STATEFS_QT_HEADERS})
 
 add_library(provider-upower SHARED
   ${SRC}
+#  ${STATEFS_QT_SRC}
   upower.cpp
   )
 

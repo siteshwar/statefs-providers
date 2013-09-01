@@ -22,11 +22,11 @@ set_source_files_properties(${ALL_IF}
 
  
 qt5_add_dbus_interface(SRC ${MGR_IF} manager_interface)
-qt5_wrap_cpp(STATEFS_QT_SRC ${STATEFS_QT_HEADERS})
+# qt5_wrap_cpp(STATEFS_QT_SRC ${STATEFS_QT_HEADERS})
 
 add_library(provider-${SELF} SHARED
   ${SRC}
-  ${STATEFS_QT_SRC}
+  # ${STATEFS_QT_SRC}
   provider_${SELF}.cpp
   )
 

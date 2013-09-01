@@ -10,9 +10,13 @@ link_directories(
   ${Qt5DBus_LIBRARY_DIRS}
 )
 
+qt5_wrap_cpp(STATEFS_QT_SRC ${STATEFS_QT_HEADERS})
 
 add_library(statefs-qt5
-  SHARED util.cpp ns.cpp
+  SHARED
+  util.cpp
+  ns.cpp
+  ${STATEFS_QT_SRC}
 )
 
 target_link_libraries(statefs-qt5
