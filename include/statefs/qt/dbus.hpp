@@ -66,14 +66,23 @@ public:
         if (watcher_)
             return;
 
-        watcher_.reset
-            (new QDBusServiceWatcher
-             (service_, bus_, QDBusServiceWatcher::WatchForRegistration));
+        watcher_.reset(new QDBusServiceWatcher(service_, bus_));
+        // , QDBusServiceWatcher::WatchForRegistration));
 
-        connect(watcher_.get(), &QDBusServiceWatcher::serviceRegistered
-                , onRegister);
-        connect(watcher_.get(), &QDBusServiceWatcher::serviceUnregistered
-                , onUnregister);
+        auto cb = [onRegister, onUnregister]
+            (const QString & serviceName
+             , const QString & oldOwner
+             , const QString & newOwner) {
+            if (newOwner == "") {
+                qDebug() << serviceName << " is unregistered";
+                onUnregister();
+            } else {
+                qDebug() << serviceName << " is registered";
+                onRegister();
+            }
+        };
+        connect(watcher_.get(), &QDBusServiceWatcher::serviceOwnerChanged
+                , cb);
     }
 
 private:
