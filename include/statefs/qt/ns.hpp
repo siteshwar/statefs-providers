@@ -40,6 +40,7 @@ protected:
     void addProperty(char const *, char const *);
     void addProperty(char const *, char const *, char const *);
     void setProperties(DefaultProperties const &);
+    void updateProperty(const QString &, const QVariant &);
 
     std::unique_ptr<PropertiesSource> src_;
 
@@ -47,7 +48,6 @@ private:
 
     void setProperties(QVariantMap const &);
     void setProperties(std::map<QString, QVariant> const &);
-    void updateProperty(const QString &, const QVariant &);
 
     friend class PropertiesSource;
 

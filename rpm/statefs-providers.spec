@@ -67,6 +67,7 @@ BuildRequires: graphviz
 %define p_bluez -n statefs-provider-bluez
 %define p_upower -n statefs-provider-upower
 %define p_connman -n statefs-provider-connman
+%define p_ofono -n statefs-provider-ofono
 
 %package %{p_bluez}
 Summary: BlueZ statefs provider
@@ -115,6 +116,22 @@ Obsoletes: contextkit-plugin-connman <= %{ckit_version}
 Provides: contextkit-plugin-connman = %{ckit_version1}
 Provides: statefs-provider-internet = %{version}
 %description %{p_connman}
+%{summary}
+
+%package %{p_ofono}
+Summary: oFono statefs provider
+Group: Applications/System
+Requires(post): /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
+Requires: statefs-providers-common = %{version}
+Requires: statefs-loader-qt5
+Requires: connman >= 1.15
+Obsoletes: contextkit-meego-cellular <= %{meego_ver}
+Provides: contextkit-meego-cellular = %{meego_ver1}
+Obsoletes: contextkit-plugin-cellular <= %{ckit_version}
+Provides: contextkit-plugin-cellular = %{ckit_version1}
+Provides: statefs-provider-cellular = %{version}
+%description %{p_ofono}
 %{summary}
 
 %prep
@@ -186,4 +203,15 @@ statefs register %{_libdir}/statefs/libprovider-upower.so --statefs-type=qt5 || 
 statefs register %{_libdir}/statefs/libprovider-connman.so --statefs-type=qt5 || :
 
 %postun %{p_connman}
+/sbin/ldconfig
+
+%files %{p_ofono}
+%defattr(-,root,root,-)
+%{_libdir}/statefs/libprovider-ofono.so
+
+%post %{p_ofono}
+/sbin/ldconfig
+statefs register %{_libdir}/statefs/libprovider-ofono.so --statefs-type=qt5 || :
+
+%postun %{p_ofono}
 /sbin/ldconfig
