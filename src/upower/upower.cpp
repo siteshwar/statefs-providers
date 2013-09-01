@@ -39,6 +39,8 @@ static char const *service_name = "org.freedesktop.UPower";
 Bridge::Bridge(PowerNs *ns, QDBusConnection &bus)
     : PropertiesSource(ns)
     , bus_(bus)
+    , watch_(bus, service_name)
+    , last_values_{87.0, true, false, 878787, 0, UnknownState}
 {
 }
 
@@ -46,33 +48,36 @@ void Bridge::updateAllProperties()
 {
     using namespace std::placeholders;
     auto set = std::bind(&PropertiesSource::updateProperty, this, _1, _2);
-    auto c = device_->capacity();
-    set("ChargePercentage", round(c));
-    set("Capacity", c);
-    set("OnBattery", manager_->onBattery());
-    set("LowBattery", manager_->onLowBattery());
-    set("TimeUntilLow", device_->timeToEmpty());
-    set("TimeUntilFull", device_->timeToFull());
-    set("Energy", device_->energy());
-    set("EnergyFull", device_->energyFull());
-    DeviceState state = (DeviceState)device_->state();
-    set("IsCharging", state == Charging || state == FullyCharged);
+    auto actions = std::make_tuple
+        ([&set](double v) {
+            set("ChargePercentage", round(v));
+            set("Capacity", v);
+        }, [&set](bool v) { set("OnBattery", v);
+        }, [&set](bool v) { set("LowBattery", v);
+        }, [&set](qlonglong v) { set("TimeUntilLow", v);
+        }, [&set](qlonglong v) { set("TimeUntilFull", v);
+        }, [&set](DeviceState v) {
+            set("IsCharging", v == Charging || v == FullyCharged);
+        });
+    Properties props_now { device_->percentage()
+            , manager_->onBattery(), manager_->onLowBattery()
+            , device_->timeToEmpty(), device_->timeToFull()
+            , (DeviceState)device_->state() };
+    process_difference_update(last_values_, props_now, actions);
 }
 
 bool Bridge::findBattery()
 {
-    qDebug() << "Get devices";
+    qDebug() << "Enumerating upower devices";
     auto devices = sync(manager_->EnumerateDevices()).value();
+    qDebug() << "found " << devices.size() << " upower device(s)";
     for (auto it = devices.begin(); it != devices.end(); ++it) {
 		std::unique_ptr<Device> device(new Device(service_name, it->path(), bus_));
 		auto dev_type = (DeviceType)device->type();
 
-        qDebug() << "UPower dev " << dev_type << ", E:" << device->energyFull()
-                 << " V:" << device->voltage()
-                 << " = " << device->nativePath();
 		if(dev_type == Battery && device->energyFull() > 0 && device->voltage() > 0)
 		{
-            qDebug() << " is battery";
+            qDebug() << it->path() << " is battery";
 			device_ = std::move(device);
             updateAllProperties();
             connect(device_.get(), &Device::Changed
@@ -84,50 +89,31 @@ bool Bridge::findBattery()
     return false;
 }
 
-void Bridge::watchUPower()
-{
-    if (watcher_)
-        return;
-
-    watcher_.reset
-        (new QDBusServiceWatcher(service_name, bus_));
-    connect(watcher_.get(), &QDBusServiceWatcher::serviceRegistered
-            , [this]() {
-                qDebug() << "Got UPower";
-                init();
-            });
-    connect(watcher_.get(), &QDBusServiceWatcher::serviceUnregistered
-            , [this]() {
-                qDebug() << "Lost UPower";
-                device_.reset();
-                manager_.reset();
-            });
-    connect(watcher_.get(), &QDBusServiceWatcher::serviceOwnerChanged
-            , [this](const QString &serviceName, const QString &oldOwner, const QString &newOwner) {
-                qDebug() << serviceName << " owner is changed " << oldOwner << "->" << newOwner;
-            });
-}
-
 void Bridge::init()
 {
+    auto reset = [this]() {
+        device_.reset();
+        manager_.reset();
+    };
+    watch_.init([this]() { init(); }, reset);
     manager_.reset(new Manager(service_name, "/org/freedesktop/UPower", bus_));
-    if (!findBattery())
-        watchUPower();
+    findBattery();
 }
 
 PowerNs::PowerNs(QDBusConnection &bus)
     : Namespace("Battery", std::unique_ptr<PropertiesSource>
                 (new Bridge(this, bus)))
+    , defaults_{
+    { "ChargePercentage", "87" }
+    , { "Capacity", "87" }
+    , { "OnBattery", "1" }
+    , { "LowBattery", "0" }
+    , { "TimeUntilLow", "878787" }
+    , { "TimeUntilFull", "0" }
+    , { "IsCharging", "0" }}
 {
-    addProperty("ChargePercentage", "87");
-    addProperty("Capacity", "87");
-    addProperty("OnBattery", "1");
-    addProperty("LowBattery", "0");
-    addProperty("TimeUntilLow", "878787");
-    addProperty("TimeUntilFull", "0");
-    addProperty("IsCharging", "0");
-    addProperty("Energy", "7");
-    addProperty("EnergyFull", "8");
+    for (auto v : defaults_)
+        addProperty(v.first, v.second);
     src_->init();
 }
 
