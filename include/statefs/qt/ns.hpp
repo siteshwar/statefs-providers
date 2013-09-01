@@ -12,6 +12,8 @@ namespace statefs { namespace qt {
 
 class Namespace;
 
+typedef std::vector<std::pair<char const*, char const*> > DefaultProperties;
+
 class PropertiesSource
 {
 public:
@@ -21,7 +23,7 @@ public:
     void setProperties(QVariantMap const &);
     void setProperties(std::map<QString, QVariant> const &);
     void updateProperty(const QString &, const QVariant &);
-private:
+protected:
     Namespace *target_;
 };
 
@@ -37,6 +39,8 @@ public:
 protected:
     void addProperty(char const *, char const *);
     void addProperty(char const *, char const *, char const *);
+    void setProperties(DefaultProperties const &);
+
     std::unique_ptr<PropertiesSource> src_;
 
 private:

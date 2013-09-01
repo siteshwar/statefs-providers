@@ -34,6 +34,18 @@ void Namespace::setProperties(std::map<QString, QVariant> const &src)
     }
 }
 
+void Namespace::setProperties(DefaultProperties const &src)
+{
+    for (auto const &nv : src) {
+        auto p = setters_for_props_.find(nv.first);
+        if (p != setters_for_props_.end()) {
+            auto set = p->second;
+            set(std::string(nv.second));
+        }
+    }
+}
+
+
 void Namespace::updateProperty(const QString &name, const QVariant &value)
 {
     auto it = setters_for_props_.find(name);
