@@ -30,16 +30,14 @@ public:
 
 private slots:
     void defaultAdapterChanged(const QDBusObjectPath &);
-    void propertyChanged(const QString &, const QDBusVariant &);
 
 private:
-
-    bool createDevice(const QDBusObjectPath &);
 
     QDBusConnection &bus_;
     QDBusObjectPath defaultAdapter_;
     std::unique_ptr<Manager> manager_;
     std::unique_ptr<Device> device_;
+    statefs::qt::ServiceWatch watch_;
 };
 
 class BlueZ : public statefs::qt::Namespace
@@ -47,6 +45,11 @@ class BlueZ : public statefs::qt::Namespace
 public:
 
     BlueZ(QDBusConnection &bus);
+
+private:
+    friend class Bridge;
+    void reset_properties();
+    statefs::qt::DefaultProperties defaults_;
 };
 
 }}

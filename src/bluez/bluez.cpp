@@ -50,25 +50,35 @@ using statefs::qt::Namespace;
 using statefs::qt::PropertiesSource;
 using statefs::qt::sync;
 
+static char const *service_name = "org.bluez";
 
 Bridge::Bridge(BlueZ *ns, QDBusConnection &bus)
     : PropertiesSource(ns)
     , bus_(bus)
-    , manager_(new Manager("org.bluez", "/", bus))
+    , watch_(bus, service_name)
 {
 }
 
 void Bridge::init()
 {
-    connect(manager_.get(), &Manager::DefaultAdapterChanged
-            , this, &Bridge::defaultAdapterChanged);
+    auto setup_manager = [this]() {
+        manager_.reset(new Manager(service_name, "/", bus_));
+        connect(manager_.get(), &Manager::DefaultAdapterChanged
+                , this, &Bridge::defaultAdapterChanged);
 
-    auto getDefault = sync(manager_->DefaultAdapter());
-    if (getDefault.isError()) {
-        qWarning() << "DefaultAdapter error:" << getDefault.error();
-    } else {
-        defaultAdapterChanged(getDefault.value());
-    }
+        auto getDefault = sync(manager_->DefaultAdapter());
+        if (getDefault.isError()) {
+            qWarning() << "DefaultAdapter error:" << getDefault.error();
+        } else {
+            defaultAdapterChanged(getDefault.value());
+        }
+    };
+    auto reset_manager = [this]() {
+        manager_.reset();
+        static_cast<BlueZ*>(target_)->reset_properties();
+    };
+    watch_.init(setup_manager, reset_manager);
+    setup_manager();
 }
 
 void Bridge::defaultAdapterChanged(const QDBusObjectPath &v)
@@ -76,10 +86,13 @@ void Bridge::defaultAdapterChanged(const QDBusObjectPath &v)
     qDebug() << "New default bluetooth adapter" << v.path();
     defaultAdapter_ = v;
 
-    if (!createDevice(v))
-        return;
+    device_.reset(new Device(service_name, v.path(), bus_));
 
     auto res = sync(device_->GetProperties());
+    if (res.isError()) {
+        qWarning() << "BT Adapter error:" << res.error();
+        return;
+    }
     auto props = res.value();
     setProperties(props);
 
@@ -92,6 +105,11 @@ void Bridge::defaultAdapterChanged(const QDBusObjectPath &v)
 BlueZ::BlueZ(QDBusConnection &bus)
     : Namespace("Bluetooth", std::unique_ptr<PropertiesSource>
                 (new Bridge(this, bus)))
+    , defaults_({
+            { "Enabled", "0" }
+            , { "Visible", "0" }
+            , { "Connected", "0" }
+            , { "Address", "00:00:00:00:00:00" }})
 {
     addProperty("Enabled", "0", "Powered");
     addProperty("Visible", "0", "Discoverable");
@@ -100,15 +118,11 @@ BlueZ::BlueZ(QDBusConnection &bus)
     src_->init();
 }
 
-bool Bridge::createDevice(const QDBusObjectPath &v)
+void BlueZ::reset_properties()
 {
-    device_.reset(new Device("org.bluez", v.path(), bus_));
-    if (!device_) {
-        qWarning() << "Can't create dbus interface";
-        return false;
-    }
-    return true;
+    setProperties(defaults_);
 }
+
 
 class Provider : public statefs::AProvider
 {
