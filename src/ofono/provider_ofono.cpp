@@ -43,6 +43,7 @@ Bridge::Bridge(MainNs *ns, QDBusConnection &bus)
     : PropertiesSource(ns)
     , bus_(bus)
     , watch_(bus, service_name)
+    , has_sim_(false)
     , tech_map_{
     {"gsm", {"gsm", "gprs"}}
     , {"edge", {"gsm", "egprs"}}
@@ -105,6 +106,7 @@ void Bridge::reset_sim()
     qDebug() << "Resetting sim properties";
     sim_.reset();
     network_.reset();
+    has_sim_ = false;
     static_cast<MainNs*>(target_)->resetProperties(MainNs::NoSimDefault);
 }
 
@@ -119,18 +121,18 @@ void Bridge::process_features(QStringList const &v)
 {
     auto features = QSet<QString>::fromList(v);
     qDebug() << "Features: " << features;
-    bool has_sim = features.contains("sim");
+    bool has_sim_feature = features.contains("sim");
     if (sim_) {
-        if (!has_sim)
+        if (!has_sim_feature)
             reset_sim();
-    } else if (has_sim) {
+    } else if (has_sim_feature) {
         setup_sim(modem_path_);
     }
     bool has_net = features.contains("net");
     if (network_) {
-        if (has_sim && !has_net)
+        if (has_sim_feature && !has_net)
             reset_network();
-    } else if (has_net) {
+    } else if (has_net && has_sim_) {
         setup_network(modem_path_);
     }
 }
@@ -235,7 +237,8 @@ void Bridge::setup_sim(QString const &path)
     qDebug() << "Getting sim properties";
     auto update = [this](QString const &n, QVariant const &v) {
         if (n == "Present") {
-            if (v.toBool()) {
+            has_sim_ = v.toBool();
+            if (has_sim_) {
                 if (!network_)
                     updateProperty("RegistrationStatus", "offline");
             } else {

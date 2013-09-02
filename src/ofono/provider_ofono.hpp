@@ -48,6 +48,7 @@ private:
 
     QDBusConnection &bus_;
     ServiceWatch watch_;
+    bool has_sim_;
     std::unique_ptr<Manager> manager_;
     std::unique_ptr<Modem> modem_;
     std::unique_ptr<Network> network_;
