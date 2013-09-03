@@ -97,6 +97,7 @@ Bridge::Bridge(MainNs *ns, QDBusConnection &bus)
 void Bridge::reset_modem()
 {
     qDebug() << "Resetting mode properties";
+    modem_path_ = "";
     modem_.reset();
     reset_sim();
 }
@@ -140,27 +141,29 @@ void Bridge::process_features(QStringList const &v)
 bool Bridge::setup_modem(QString const &path, QVariantMap const &props)
 {
     if (props["Type"].toString() != "hardware") {
-        // TODO hardcoded for phones
+        // TODO hardcoded for phones now, no support for e.g. DUN
         return false;
     }
-    qDebug() << "HW modem " << path;
+    qDebug() << "Hardware modem " << path;
+
+    auto update = [this](QString const &n, QVariant const &v) {
+        if (n == "Features")
+            process_features(v.toStringList());
+        else if (n == "Powered") {
+            if (!v.toBool() && !sim_)
+                reset_sim();
+        }
+    };
 
     modem_.reset(new Modem(service_name, path, bus_));
     modem_path_ = path;
-    // auto set_homonym = [this, &props](QString const &name) {
-    //     updateProperty(name, props[name]);
-    // };
-    // set_homonym("Manufacturer");
-    // set_homonym("Model");
-    // set_homonym("Serial");
-    // set_homonym("Revision");
 
     connect(modem_.get(), &Modem::PropertyChanged
-            , [this](QString const &n, QDBusVariant const &v) {
-                if (n == "Features")
-                    process_features(v.variant().toStringList());
+            , [update](QString const &n, QDBusVariant const &v) {
+                update(n, v.variant());
             });
-    process_features(props["Features"].toStringList());
+    for (auto it = props.begin(); it != props.end(); ++it)
+        update(it.key(), it.value());
     return true;
 }
 
@@ -249,11 +252,6 @@ void Bridge::setup_sim(QString const &path)
             if (it != sim_props_map_.end())
                 updateProperty(it->second, v);
         }
-        // auto paction = net_property_actions_.find(n);
-        // if (paction != net_property_actions_.end()) {
-        //     auto action = paction->second;
-        //     action(v);
-        // }
     };
     sim_.reset(new SimManager(service_name, path, bus_));
     auto res = sync(sim_->GetProperties());
