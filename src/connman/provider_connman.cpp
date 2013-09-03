@@ -155,7 +155,7 @@ Bridge::Status Bridge::process_service(QString const &path, QVariantMap const &p
     current_net_order_ = order;
     current_service_ = path;
     auto update = [this](QString const &n, QVariant const &v) {
-        if (n == "NetworkName")
+        if (n == "Name")
             updateProperty("NetworkName", v);
         else if (n == "Strength")
             updateProperty("SignalStrength", v.toUInt());

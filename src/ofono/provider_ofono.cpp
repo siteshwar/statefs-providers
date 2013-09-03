@@ -283,7 +283,7 @@ MainNs::MainNs(QDBusConnection &bus)
             { "SignalStrength", "0"}
             , { "DataTechnology", "unknown"}
             , { "RegistrationStatus", "offline"} // contextkit
-            , { "NetworkStatus", "offline"} // ofono
+            , { "Status", "offline"} // ofono
             , { "Technology", "unknown"}
             , { "SignalBars", "0"}
             , { "CellName", ""}
