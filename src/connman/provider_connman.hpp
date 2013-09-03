@@ -39,23 +39,39 @@ private:
         Ignore
     };
 
-    void initManager();
-    Status processTechnology(QVariantMap const &);
-    Status processServices();
-    void processTechnologies();
-    Status processService(QVariantMap const &);
-    void resetManager();
+    enum Order {
+        WiFi,
+        Cellular,
+        Other,
+
+        OrderEnd
+    };
+
+    void init_manager();
+    Status process_technology(QString const&, QVariantMap const&);
+    Status process_services();
+    void process_technologies();
+    Status process_service(QString const&, QVariantMap const &);
+    void reset_manager();
+    void reset_properties();
+    Order get_order(QString const&);
 
     QDBusConnection &bus_;
     std::unique_ptr<ServiceWatch> watch_;
     std::unique_ptr<Manager> manager_;
-    const std::map<QString, QVariant> defaults_;
+    Order current_net_order_;
+    QString current_technology_;
+    QString current_service_;
 };
 
 class InternetNs : public statefs::qt::Namespace
 {
 public:
     InternetNs(QDBusConnection &bus);
+private:
+    friend class Bridge;
+    void reset_properties();
+    statefs::qt::DefaultProperties defaults_;
 };
 
 }}

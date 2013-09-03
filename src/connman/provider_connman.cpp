@@ -40,109 +40,174 @@ Bridge::Bridge(InternetNs *ns, QDBusConnection &bus)
     : PropertiesSource(ns)
     , bus_(bus)
     , watch_(new ServiceWatch(bus, service_name))
-    , defaults_{{"NetworkType", ""}
-                           , {"NetworkState", "offline"}
-                           , {"NetworkName", ""}
-                           // , {"TrafficIn", "0"}
-                           // , {"TrafficOut", "0"}
-                           , {"SignalStrength", "0"}}
+    , current_net_order_(OrderEnd)
 {
+}
+
+void Bridge::init_manager()
+{
+    qDebug() << "Establish connection with connman";
+    manager_.reset(new Manager(service_name, "/", bus_));
+    auto res = sync(manager_->GetProperties());
+    if (res.isError()) {
+        qWarning() << "Can't get connman props:" << res.error();
+        return;
+    }
+
+    auto update = [this](QString const &n, QVariant const &v) {
+        if (n == "State") {
+            if (v == "online")
+                process_technologies();
+            else
+                reset_properties();
+        }
+    };
+    connect(manager_.get(), &Manager::PropertyChanged
+            , [update] (QString const &n, QDBusVariant const &v) {
+                update(n, v.variant());
+            });
+    auto props = res.value();
+    for (auto it = props.begin(); it != props.end(); ++it)
+        update(it.key(), it.value());
+
+    connect(manager_.get(), &Manager::TechnologyAdded
+            , [this] (const QDBusObjectPath &path, const QVariantMap &props) {
+                process_technology(path.path(), props);
+            });
+    connect(manager_.get(), &Manager::TechnologyRemoved
+            , [this] (const QDBusObjectPath &path) {
+                if (path.path() == current_technology_)
+                    process_technologies();
+            });
+    connect(manager_.get(), &Manager::ServicesAdded
+            , [this] (PathPropertiesArray const &info) {
+                process_services();
+            });
+    connect(manager_.get(), &Manager::ServicesRemoved
+            , [this] (const QList<QDBusObjectPath> &data) {
+                auto services = QSet<QDBusObjectPath>::fromList(data);
+                if (services.contains(QDBusObjectPath(current_service_)))
+                    process_technologies();
+            });
 }
 
 void Bridge::init()
 {
-    qDebug() << "Establish connection with connman";
-    watch_->init([this]() { init(); }, [this]() { resetManager(); });
-    manager_.reset(new Manager(service_name, "/", bus_));
-    auto props = sync(manager_->GetProperties());
-    if (props.isError()) {
-        qWarning() << "Can't get connman props:" << props.error();
-        return;
-    }
-    auto updateState = [this](QVariant const &v) {
-        updateProperty("NetworkState", v);
-        if (v == "online")
-            processTechnologies();
-        else
-            setProperties(defaults_);
-    };
-    connect(manager_.get(), &Manager::PropertyChanged
-            , [this, updateState] (QString const &n, QDBusVariant const &v) {
-                if (n == "State")
-                    updateState(v.variant());
-            });
-    auto v = props.value();
-    updateState(v["State"]);
+    watch_->init([this]() { init_manager(); },
+                 [this]() { reset_manager(); });
+    init_manager();
 }
 
-void Bridge::resetManager()
+void Bridge::reset_properties()
+{
+    qDebug() << "Internet: reset properties";
+    static_cast<InternetNs*>(target_)->reset_properties();
+}
+
+Bridge::Order Bridge::get_order(QString const &net_type)
+{
+    return (net_type == "wifi"
+            ? WiFi : (net_type == "cellular"
+                      ? Cellular : Other));
+}
+
+void Bridge::reset_manager()
 {
     qDebug() << "Connman is unregistered, cleaning up";
     manager_.reset();
-    setProperties(defaults_);
+    reset_properties();
 }
 
-void Bridge::processTechnologies()
+void Bridge::process_technologies()
 {
-    auto technologies = sync(manager_->GetTechnologies());
-    if (technologies.isError()) {
-        qWarning() << "Can't get connman technologies:" << technologies.error();
+    current_net_order_ = OrderEnd;
+    current_technology_ = "";
+    current_service_ = "";
+
+    auto res = sync(manager_->GetTechnologies());
+    if (res.isError()) {
+        qWarning() << "Can't get connman technologies:" << res.error();
         return;
     }
-    auto v = technologies.value();
-    for (auto pp = v.begin(); pp != v.end(); ++pp) {
-        if (processTechnology(std::get<1>(*pp)) == ExactMatch)
-            break;
+    auto techs = res.value();
+    QMap<Order, QVariantMap const*> sorted_online;
+    for (auto pp = techs.begin(); pp != techs.end(); ++pp) {
+        auto const &path = std::get<0>(*pp).path();
+        auto const &props = std::get<1>(*pp);
+        process_technology(path, props);
     }
+    if (current_net_order_ == OrderEnd)
+        reset_properties();
 }
 
-Bridge::Status Bridge::processService(QVariantMap const &props)
+Bridge::Status Bridge::process_service(QString const &path, QVariantMap const &props)
 {
-    auto service_type = props["Type"];
-    if (props["Type"] == "wifi" && props["State"] == "online") {
-        auto name = props["Name"];
-        qDebug() << "Wifi" << name.toString() << " is online";
-        updateProperty("NetworkName", name);
-        updateProperty("SignalStrength", props["Strength"]);
-        return Match;
-    }
-    return Ignore;
+    auto service_type = props["Type"].toString();
+    auto state = props["State"].toString();
+    auto name = props["Name"].toString();
+
+    auto order = get_order(service_type);
+    if (order > current_net_order_ || state != "online")
+        return Ignore;
+
+    qDebug() << "Service " << name << " is online";
+    current_net_order_ = order;
+    current_service_ = path;
+    updateProperty("NetworkName", name);
+    updateProperty("SignalStrength", props["Strength"].toUInt());
+    return Match;
 }
 
-Bridge::Status Bridge::processServices()
+Bridge::Status Bridge::process_services()
 {
-    auto services = sync(manager_->GetServices());
-    if (services.isError()) {
-        qWarning() << "Can't get connman services:" << services.error();
+    auto res = sync(manager_->GetServices());
+    if (res.isError()) {
+        qWarning() << "Can't get connman services:" << res.error();
         return Ignore;
     }
-    auto v = services.value();
-    for (auto pp = v.begin(); pp != v.end(); ++pp) {
-        if (processService(std::get<1>(*pp)) != Ignore)
+    auto services = res.value();
+    for (auto pp = services.begin(); pp != services.end(); ++pp) {
+        auto const &path = std::get<0>(*pp).path();
+        auto const &props = std::get<1>(*pp);
+        if (process_service(path, props) != Ignore)
             return ExactMatch;
     }
     return Ignore;
 }
 
-Bridge::Status Bridge::processTechnology(QVariantMap const &props)
+Bridge::Status Bridge::process_technology(QString const &path
+                                          , QVariantMap const &props)
 {
     auto net_type = props["Type"].toString();
     auto is_connected = props["Connected"].toBool();
+
     if (!is_connected)
         return Ignore;
 
+    auto order = get_order(net_type);
+    if (order > current_net_order_)
+        return Ignore;
+
     updateProperty("NetworkType", net_type);
+    qDebug() << "Technology (type=" << net_type << ") is online";
+    updateProperty("NetworkState", "online");
+    current_net_order_ = order;
+    current_technology_ = path;
+    if (order == WiFi || order == Cellular)
+        return process_services();
 
-    if (net_type == "wifi")
-        return processServices();
-
-    qDebug() << "Net (type=" << net_type << ") is online";
     return Match;
 }
 
 InternetNs::InternetNs(QDBusConnection &bus)
     : Namespace("Internet", std::unique_ptr<PropertiesSource>
                 (new Bridge(this, bus)))
+    , defaults_({{"NetworkType", ""}
+            , {"NetworkState", "offline"}
+            , {"NetworkName", ""}
+            //, {"TrafficIn", "0"}
+            //, {"TrafficOut", "0"}
+            , {"SignalStrength", "0"}})
 {
     addProperty("NetworkType", "");
     addProperty("NetworkState", "offline");
@@ -151,6 +216,11 @@ InternetNs::InternetNs(QDBusConnection &bus)
     addProperty("TrafficOut", "0");
     addProperty("SignalStrength", "0");
     src_->init();
+}
+
+void InternetNs::reset_properties()
+{
+    setProperties(defaults_);
 }
 
 class Provider;
