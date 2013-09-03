@@ -123,6 +123,7 @@ void Bridge::process_technologies()
     current_net_order_ = OrderEnd;
     current_technology_ = "";
     current_service_ = "";
+    service_.reset();
 
     auto res = sync(manager_->GetTechnologies());
     if (res.isError()) {
@@ -153,8 +154,22 @@ Bridge::Status Bridge::process_service(QString const &path, QVariantMap const &p
     qDebug() << "Service " << name << " is online";
     current_net_order_ = order;
     current_service_ = path;
-    updateProperty("NetworkName", name);
-    updateProperty("SignalStrength", props["Strength"].toUInt());
+    auto update = [this](QString const &n, QVariant const &v) {
+        if (n == "NetworkName")
+            updateProperty("NetworkName", v);
+        else if (n == "Strength")
+            updateProperty("SignalStrength", v.toUInt());
+        else if (n == "State" && !v.toBool())
+            process_technologies();
+    };
+    for (auto pp = props.begin(); pp != props.end(); ++pp)
+        update(pp.key(), pp.value());
+
+    service_.reset(new Service(service_name, path, bus_));
+    connect(service_.get(), &Service::PropertyChanged
+            , [update](QString const &n, QDBusVariant const&v) {
+                update(n, v.variant());
+            });
     return Match;
 }
 

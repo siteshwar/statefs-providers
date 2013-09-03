@@ -2,6 +2,7 @@
 #define _STATEFS_PRIVATE_CONNMAN_HPP_
 
 #include "manager_interface.h"
+#include "service_interface.h"
 
 #include <statefs/provider.hpp>
 #include <statefs/property.hpp>
@@ -17,6 +18,7 @@
 namespace statefs { namespace connman {
 
 typedef NetConnmanManagerInterface Manager;
+typedef NetConnmanServiceInterface Service;
 using statefs::qt::ServiceWatch;
 
 class InternetNs;
@@ -59,6 +61,7 @@ private:
     QDBusConnection &bus_;
     std::unique_ptr<ServiceWatch> watch_;
     std::unique_ptr<Manager> manager_;
+    std::unique_ptr<Service> service_;
     Order current_net_order_;
     QString current_technology_;
     QString current_service_;
