@@ -31,7 +31,7 @@ add_library(provider-${SELF} SHARED
   )
 
 target_link_libraries(provider-${SELF}
-  statefs-qt5
+  statefs-providers-qt5
   ${CMAKE_THREAD_LIBS_INIT}
   ${STATEFS_LIBRARIES}
   ${Qt5Core_LIBRARIES}

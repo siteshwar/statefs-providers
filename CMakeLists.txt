@@ -31,20 +31,20 @@ set(CMAKE_CXX_FLAGS
 )
 
 pkg_check_modules(STATEFS statefs-cpp REQUIRED)
+pkg_check_modules(STATEFS_QT5 statefs-qt5 REQUIRED)
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${STATEFS_INCLUDES}
+  ${STATEFS_QT5_INCLUDES}
 )
 
 link_directories(
   ${STATEFS_LIBS}
+  ${STATEFS_QT5_LIBS}
 )
 
 install(DIRECTORY include/statefs DESTINATION include/qt5)
-
-add_custom_target(doc
-  COMMAND doxygen ${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile)
 
 find_package(Threads)
 

@@ -12,20 +12,20 @@ link_directories(
 
 qt5_wrap_cpp(STATEFS_QT_SRC ${STATEFS_QT_HEADERS})
 
-add_library(statefs-qt5
+add_library(statefs-providers-qt5
   SHARED
-  util.cpp
   ns.cpp
   ${STATEFS_QT_SRC}
 )
 
-target_link_libraries(statefs-qt5
+target_link_libraries(statefs-providers-qt5
   ${Qt5Core_LIBRARIES}
   ${Qt5DBus_LIBRARIES}
   ${STATEFS_LIBRARIES}
+  ${STATEFS_QT5_LIBRARIES}
 )
 
-configure_file(statefs-qt5.pc.in statefs-qt5.pc @ONLY)
+configure_file(statefs-providers-qt5.pc.in statefs-providers-qt5.pc @ONLY)
   
-install(TARGETS statefs-qt5 DESTINATION ${DST_LIB})
-install(FILES statefs-qt5.pc DESTINATION ${DST_LIB}/pkgconfig)
+install(TARGETS statefs-providers-qt5 DESTINATION ${DST_LIB})
+install(FILES statefs-providers-qt5.pc DESTINATION ${DST_LIB}/pkgconfig)

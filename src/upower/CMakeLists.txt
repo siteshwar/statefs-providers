@@ -33,7 +33,7 @@ add_library(provider-upower SHARED
   )
 
 target_link_libraries(provider-upower
-  statefs-qt5
+  statefs-providers-qt5
   ${CMAKE_THREAD_LIBS_INIT}
   ${STATEFS_LIBRARIES}
   ${Qt5Core_LIBRARIES}

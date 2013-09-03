@@ -28,7 +28,7 @@ add_library(provider-bluez SHARED
   )
 
 target_link_libraries(provider-bluez
-  statefs-qt5
+  statefs-providers-qt5
   ${CMAKE_THREAD_LIBS_INIT}
   ${STATEFS_LIBRARIES}
   ${Qt5Core_LIBRARIES}
