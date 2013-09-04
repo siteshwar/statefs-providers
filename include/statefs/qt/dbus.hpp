@@ -3,6 +3,8 @@
 
 #include <QDBusPendingReply>
 #include <QDBusServiceWatcher>
+#include <QDebug>
+
 #include <stdexcept>
 #include <tuple>
 #include <memory>
@@ -17,6 +19,26 @@ QDBusPendingReply<T> sync(QDBusPendingReply<T> &&reply)
     if (!watcher.isFinished())
         throw std::logic_error("D-Bus request is not executed");
     return reply;
+}
+
+template <typename T, typename OnValue>
+bool sync(QDBusPendingReply<T> reply, OnValue on_value)
+{
+    QDBusPendingCallWatcher watcher(reply);
+    watcher.waitForFinished();
+    if (!watcher.isFinished()) {
+        qWarning() << "D-Bus request is not executed";
+        return false;
+    }
+    if (reply.isError()) {
+        auto err = reply.error();
+        qWarning() << "D-Bus request error " << err.name()
+                   << ": " << err.message();
+        return false;
+    }
+
+    on_value(reply.value());
+    return true;
 }
 
 template <size_t Pos, typename T>
