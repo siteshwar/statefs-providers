@@ -24,7 +24,7 @@ qt5_add_dbus_interface(SRC ${ADA_IF} adapter_interface)
 
 add_library(provider-bluez SHARED
   ${SRC}
-  bluez.cpp
+  provider_bluez.cpp
   )
 
 target_link_libraries(provider-bluez

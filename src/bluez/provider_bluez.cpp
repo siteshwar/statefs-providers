@@ -22,7 +22,7 @@
  * http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
  */
 
-#include "bluez.hpp"
+#include "provider_bluez.hpp"
 #include <iostream>
 #include <statefs/qt/dbus.hpp>
 
