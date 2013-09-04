@@ -95,12 +95,17 @@ public:
             (const QString & serviceName
              , const QString & oldOwner
              , const QString & newOwner) {
-            if (newOwner == "") {
-                qDebug() << serviceName << " is unregistered";
-                onUnregister();
-            } else {
-                qDebug() << serviceName << " is registered";
-                onRegister();
+            try {
+                if (newOwner == "") {
+                    qDebug() << serviceName << " is unregistered";
+                    onUnregister();
+                } else {
+                    qDebug() << serviceName << " is registered";
+                    onRegister();
+                }
+            } catch(std::exception const &e) {
+                qWarning() << "Exception " << e.what() << " handling "
+                << serviceName << " un/registration";
             }
         };
         connect(watcher_.get(), &QDBusServiceWatcher::serviceOwnerChanged
