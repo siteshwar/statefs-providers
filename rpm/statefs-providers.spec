@@ -24,11 +24,14 @@ BuildRequires: pkgconfig(Qt5DBus)
 %description
 %{summary}
 
-%define p_common -n statefs-providers-common
+%define p_common -n statefs-provider-qt5
+%define n_common statefs-provider-qt5
 
 %package %{p_common}
 Summary: Package to replace contextkit plugins
 Group: Applications/System
+Requires(post): /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
 Requires: statefs >= %{statefs_ver}
 Obsoletes: contextkit-maemo <= %{maemo_ver}
 Provides: contextkit-maemo = %{maemo_ver1}
@@ -36,17 +39,8 @@ Obsoletes: contextkit-meego <= %{meego_ver}
 Provides: contextkit-meego = %{meego_ver1}
 Obsoletes: statefs-contextkit-provider <= %{ckit_statefs_version}
 Provides: statefs-contextkit-provider = %{ckit_statefs_version1}
-%description %{p_common}
-%{summary}
-
-%package qt5
-Summary: StateFS Qt5 library for providers
-Group: System Environment/Libraries
-Requires(post): /sbin/ldconfig
-Requires(postun): /sbin/ldconfig
-Requires: statefs >= %{statefs_ver}
 BuildRequires: pkgconfig(statefs-qt5) >= 0.2.33
-%description qt5
+%description %{p_common}
 %{summary}
 
 %package qt5-devel
@@ -60,13 +54,14 @@ Requires: statefs-providers-qt5 = %{version}-%{release}
 %define p_upower -n statefs-provider-upower
 %define p_connman -n statefs-provider-connman
 %define p_ofono -n statefs-provider-ofono
+%define p_mce -n statefs-provider-mce
 
 %package %{p_bluez}
 Summary: BlueZ statefs provider
 Group: Applications/System
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
-Requires: statefs-providers-common = %{version}
+Requires: %{n_common} = %{version}-%{release}
 Requires: statefs-loader-qt5
 Obsoletes: contextkit-plugin-bluez <= %{ckit_version}
 Provides: contextkit-plugin-bluez = %{ckit_version1}
@@ -81,7 +76,7 @@ Summary: Upower statefs provider
 Group: Applications/System
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
-Requires: statefs-providers-common = %{version}
+Requires: %{n_common} = %{version}-%{release}
 Requires: statefs-loader-qt5
 Requires: upower >= 0.9.18
 Obsoletes: contextkit-meego-battery-upower <= %{meego_ver}
@@ -99,7 +94,7 @@ Summary: ConnMan statefs provider
 Group: Applications/System
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
-Requires: statefs-providers-common = %{version}
+Requires: %{n_common} = %{version}-%{release}
 Requires: statefs-loader-qt5
 Requires: connman >= 1.15
 Obsoletes: contextkit-meego-internet <= %{meego_ver}
@@ -115,15 +110,30 @@ Summary: oFono statefs provider
 Group: Applications/System
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
-Requires: statefs-providers-common = %{version}
+Requires: %{n_common} = %{version}-%{release}
 Requires: statefs-loader-qt5
-Requires: connman >= 1.15
+Requires: ofono >= 1.12
 Obsoletes: contextkit-meego-cellular <= %{meego_ver}
 Provides: contextkit-meego-cellular = %{meego_ver1}
 Obsoletes: contextkit-plugin-cellular <= %{ckit_version}
 Provides: contextkit-plugin-cellular = %{ckit_version1}
 Provides: statefs-provider-cellular = %{version}
 %description %{p_ofono}
+%{summary}
+
+%package %{p_mce}
+Summary: MCE statefs provider
+Group: Applications/System
+Requires(post): /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
+Requires: %{n_common} = %{version}-%{release}
+Requires: statefs-loader-qt5
+BuildRequires: pkgconfig(mce)
+Obsoletes: contextkit-maemo-mce <= %{maemo_ver}
+Provides: contextkit-maemo-mce = %{maemo_ver1}
+Obsoletes: contextkit-plugin-mce <= %{ckit_version}
+Provides: contextkit-plugin-mce = %{ckit_version1}
+%description %{p_mce}
 %{summary}
 
 %prep
@@ -144,13 +154,10 @@ rm -rf %{buildroot}
 %files %{p_common}
 %defattr(-,root,root,-)
 %doc README
-
-%files qt5
-%defattr(-,root,root,-)
 %{_libdir}/libstatefs-providers-qt5.so
 
-%post qt5 -p /sbin/ldconfig
-%postun qt5 -p /sbin/ldconfig
+%post %{p_common} -p /sbin/ldconfig
+%postun %{p_common} -p /sbin/ldconfig
 
 %files qt5-devel
 %defattr(-,root,root,-)
@@ -199,4 +206,15 @@ statefs register %{_libdir}/statefs/libprovider-connman.so --statefs-type=qt5 ||
 statefs register %{_libdir}/statefs/libprovider-ofono.so --statefs-type=qt5 || :
 
 %postun %{p_ofono}
+/sbin/ldconfig
+
+%files %{p_mce}
+%defattr(-,root,root,-)
+%{_libdir}/statefs/libprovider-mce.so
+
+%post %{p_mce}
+/sbin/ldconfig
+statefs register %{_libdir}/statefs/libprovider-mce.so --statefs-type=qt5 || :
+
+%postun %{p_mce}
 /sbin/ldconfig
