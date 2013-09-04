@@ -57,7 +57,7 @@ void Bridge::init_request()
     };
 
     auto on_radio = [this, ns](unsigned v) {
-        updateProperty("OfflineMode", (v & MCE_RADIO_STATE_CELLULAR) != 0);
+        updateProperty("OfflineMode", (v & MCE_RADIO_STATE_CELLULAR) == 0);
         updateProperty("WlanEnabled", (v & MCE_RADIO_STATE_WLAN) != 0);
         updateProperty("InternetEnabled", (v & MCE_RADIO_STATE_MASTER) != 0);
     };
