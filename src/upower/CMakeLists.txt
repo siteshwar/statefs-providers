@@ -29,7 +29,7 @@ qt5_add_dbus_interface(SRC ${DEV_IF} device_interface)
 add_library(provider-upower SHARED
   ${SRC}
 #  ${STATEFS_QT_SRC}
-  upower.cpp
+  provider_upower.cpp
   )
 
 target_link_libraries(provider-upower

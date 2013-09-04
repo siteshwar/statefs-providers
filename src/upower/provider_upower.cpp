@@ -22,7 +22,7 @@
  * http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
  */
 
-#include "upower.hpp"
+#include "provider_upower.hpp"
 #include <math.h>
 #include <iostream>
 #include <statefs/qt/dbus.hpp>
@@ -91,13 +91,16 @@ bool Bridge::findBattery()
 
 void Bridge::init()
 {
-    auto reset = [this]() {
+    auto init_manager = [this]() {
+        manager_.reset(new Manager(service_name, "/org/freedesktop/UPower", bus_));
+        findBattery();
+    };
+    auto reset_manager = [this]() {
         device_.reset();
         manager_.reset();
     };
-    watch_.init([this]() { init(); }, reset);
-    manager_.reset(new Manager(service_name, "/org/freedesktop/UPower", bus_));
-    findBattery();
+    watch_.init(init_manager, reset_manager);
+    init_manager();
 }
 
 PowerNs::PowerNs(QDBusConnection &bus)
