@@ -58,5 +58,6 @@ add_subdirectory(src/bluez)
 add_subdirectory(src/upower)
 add_subdirectory(src/connman)
 add_subdirectory(src/ofono)
+add_subdirectory(src/mce)
 add_subdirectory(tests)
 
