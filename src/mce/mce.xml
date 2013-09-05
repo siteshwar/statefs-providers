@@ -21,7 +21,7 @@
       <arg direction="out" type="y"/>
     </method>
     <method name="get_psm_state">
-      <arg direction="out" type="y"/>
+      <arg direction="out" type="b"/>
     </method>
     <method name="get_inactivity_status">
       <arg direction="out" type="y"/>
@@ -41,7 +41,7 @@
       <arg direction="out" type="s"/>
     </signal>
     <signal name="psm_state_ind">
-      <arg direction="out" type="y"/>
+      <arg direction="out" type="b"/>
     </signal>
     <signal name="system_inactivity_ind">
       <arg direction="out" type="y"/>

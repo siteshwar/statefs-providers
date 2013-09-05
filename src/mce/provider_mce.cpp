@@ -49,7 +49,7 @@ void Bridge::init_request()
 {
     MceNs *ns = static_cast<MceNs*>(target_);
 
-    auto on_psm = [this](unsigned char v) {
+    auto on_psm = [this](bool v) {
         updateProperty("PowerSaveMode", v);
     };
     auto on_display = [this, ns](QString const& v) {
