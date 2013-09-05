@@ -52,12 +52,17 @@ void Bridge::updateAllProperties()
         ([&set](double v) {
             set("ChargePercentage", round(v));
             set("Capacity", v);
-        }, [&set](bool v) { set("OnBattery", v);
+        }, [&set](bool v) {
+            set("OnBattery", v);
+            if (v) set("TimeUntilFull", 0);
         }, [&set](bool v) { set("LowBattery", v);
         }, [&set](qlonglong v) { set("TimeUntilLow", v);
         }, [&set](qlonglong v) { set("TimeUntilFull", v);
         }, [&set](DeviceState v) {
-            set("IsCharging", v == Charging || v == FullyCharged);
+            bool is_charging = (v == Charging || v == FullyCharged);
+            set("IsCharging", is_charging);
+            if (!is_charging || v == FullyCharged)
+                set("TimeUntilFull", 0);
         });
     Properties props_now { device_->percentage()
             , manager_->onBattery(), manager_->onLowBattery()
