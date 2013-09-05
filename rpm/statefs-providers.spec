@@ -1,7 +1,7 @@
 %define ckit_version 0.7.41
 %define ckit_version1 0.7.42
-%define ckit_statefs_version 0.2.29
-%define ckit_statefs_version1 0.2.30
+%define ckit_statefs_version 0.2.30
+%define ckit_statefs_version1 0.2.31
 %define maemo_ver 0.7.30
 %define maemo_ver1 0.7.31
 %define meego_ver 0.1.0
@@ -118,8 +118,12 @@ Requires: statefs-loader-qt5
 Requires: ofono >= 1.12
 Obsoletes: contextkit-meego-cellular <= %{meego_ver}
 Provides: contextkit-meego-cellular = %{meego_ver1}
+Obsoletes: contextkit-meego-phone <= %{meego_ver}
+Provides: contextkit-meego-phone = %{meego_ver1}
 Obsoletes: contextkit-plugin-cellular <= %{ckit_version}
 Provides: contextkit-plugin-cellular = %{ckit_version1}
+Obsoletes: contextkit-plugin-ofono <= %{ckit_version}
+Provides: contextkit-plugin-ofono = %{ckit_version1}
 Provides: statefs-provider-cellular = %{version}
 %description %{p_ofono}
 %{summary}
@@ -195,77 +199,98 @@ rm -rf %{buildroot}
 
 %files %{p_bluez}
 %defattr(-,root,root,-)
-%{_libdir}/statefs/libprovider-bluez.so
+%{_statefs_libdir}/libprovider-bluez.so
+
+%posttrans %{p_bluez}
+%statefs_register qt5 %{_statefs_libdir}/libprovider-bluez.so || :
 
 %post %{p_bluez}
 /sbin/ldconfig
-statefs register %{_libdir}/statefs/libprovider-bluez.so --statefs-type=qt5 || :
 
 %postun %{p_bluez}
 /sbin/ldconfig
+%statefs_cleanup || :
 
 %files %{p_upower}
 %defattr(-,root,root,-)
-%{_libdir}/statefs/libprovider-upower.so
+%{_statefs_libdir}/libprovider-upower.so
+
+%posttrans %{p_upower}
+%statefs_register qt5 %{_statefs_libdir}/libprovider-upower.so || :
 
 %post %{p_upower}
 /sbin/ldconfig
-statefs register %{_libdir}/statefs/libprovider-upower.so --statefs-type=qt5 || :
 
 %postun %{p_upower}
 /sbin/ldconfig
+%statefs_cleanup || :
 
 %files %{p_connman}
 %defattr(-,root,root,-)
-%{_libdir}/statefs/libprovider-connman.so
+%{_statefs_libdir}/libprovider-connman.so
+
+%posttrans %{p_connman}
+%statefs_register qt5 %{_statefs_libdir}/libprovider-connman.so || :
 
 %post %{p_connman}
 /sbin/ldconfig
-statefs register %{_libdir}/statefs/libprovider-connman.so --statefs-type=qt5 || :
 
 %postun %{p_connman}
 /sbin/ldconfig
+%statefs_cleanup || :
 
 %files %{p_ofono}
 %defattr(-,root,root,-)
-%{_libdir}/statefs/libprovider-ofono.so
+%{_statefs_libdir}/libprovider-ofono.so
+
+%posttrans %{p_ofono}
+%statefs_register qt5 %{_statefs_libdir}/libprovider-ofono.so || :
 
 %post %{p_ofono}
 /sbin/ldconfig
-statefs register %{_libdir}/statefs/libprovider-ofono.so --statefs-type=qt5 || :
 
 %postun %{p_ofono}
 /sbin/ldconfig
+%statefs_cleanup || :
 
 %files %{p_mce}
 %defattr(-,root,root,-)
-%{_libdir}/statefs/libprovider-mce.so
+%{_statefs_libdir}/libprovider-mce.so
+
+%posttrans %{p_mce}
+%statefs_register qt5 %{_statefs_libdir}/libprovider-mce.so || :
 
 %post %{p_mce}
 /sbin/ldconfig
-statefs register %{_libdir}/statefs/libprovider-mce.so --statefs-type=qt5 || :
 
 %postun %{p_mce}
 /sbin/ldconfig
+%statefs_cleanup || :
 
 %files %{p_profile}
 %defattr(-,root,root,-)
-%{_libdir}/statefs/libprovider-profile.so
+%{_statefs_libdir}/libprovider-profile.so
+
+%posttrans %{p_profile}
+%statefs_register qt5 %{_statefs_libdir}/libprovider-profile.so || :
 
 %post %{p_profile}
 /sbin/ldconfig
-statefs register %{_libdir}/statefs/libprovider-profile.so --statefs-type=qt5 || :
 
 %postun %{p_profile}
 /sbin/ldconfig
+%statefs_cleanup || :
 
 %files %{p_keyboard}
 %defattr(-,root,root,-)
-%{_libdir}/statefs/libprovider-keyboard-generic.so
+%{_statefs_libdir}/libprovider-keyboard-generic.so
+
+%posttrans %{p_keyboard}
+%statefs_register qt5 %{_statefs_libdir}/libprovider-keyboard-generic.so || :
 
 %post %{p_keyboard}
 /sbin/ldconfig
-statefs register %{_libdir}/statefs/libprovider-keyboard-generic.so --statefs-type=qt5 || :
 
 %postun %{p_keyboard}
 /sbin/ldconfig
+%statefs_cleanup || :
