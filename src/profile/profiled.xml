@@ -1,0 +1,20 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+  <interface name="com.nokia.profiled">
+    <method name="get_profile">
+      <arg direction="out" type="s"/>
+    </method>
+    <method name="has_profile">
+      <arg direction="out" type="b"/>
+    </method>
+    <signal name="profile_changed">
+      <arg direction="out" name="changed" type="b"/>
+      <arg direction="out" name="active" type="b"/>
+      <arg direction="out" name="profile" type="s"/>
+      <arg direction="out" name="values" type="a{sss}"/>
+      <annotation name="org.qtproject.QtDBus.QtTypeName.In3"
+                  value="ProfileDataList"/>
+    </signal>
+  </interface>
+</node>

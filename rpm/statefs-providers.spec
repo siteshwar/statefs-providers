@@ -55,6 +55,7 @@ Requires: statefs-providers-qt5 = %{version}-%{release}
 %define p_connman -n statefs-provider-connman
 %define p_ofono -n statefs-provider-ofono
 %define p_mce -n statefs-provider-mce
+%define p_profile -n statefs-provider-profile
 
 %package %{p_bluez}
 Summary: BlueZ statefs provider
@@ -134,6 +135,19 @@ Provides: contextkit-maemo-mce = %{maemo_ver1}
 Obsoletes: contextkit-plugin-mce <= %{ckit_version}
 Provides: contextkit-plugin-mce = %{ckit_version1}
 %description %{p_mce}
+%{summary}
+
+%package %{p_profile}
+Summary: Profiled statefs provider
+Group: Applications/System
+Requires(post): /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
+Requires: %{n_common} = %{version}-%{release}
+Requires: statefs-loader-qt5
+Requires: profiled >= 0.30
+Obsoletes: contextkit-plugin-profile <= %{ckit_version}
+Provides: contextkit-plugin-profile = %{ckit_version1}
+%description %{p_profile}
 %{summary}
 
 %prep
@@ -217,4 +231,15 @@ statefs register %{_libdir}/statefs/libprovider-ofono.so --statefs-type=qt5 || :
 statefs register %{_libdir}/statefs/libprovider-mce.so --statefs-type=qt5 || :
 
 %postun %{p_mce}
+/sbin/ldconfig
+
+%files %{p_profile}
+%defattr(-,root,root,-)
+%{_libdir}/statefs/libprovider-profile.so
+
+%post %{p_profile}
+/sbin/ldconfig
+statefs register %{_libdir}/statefs/libprovider-profile.so --statefs-type=qt5 || :
+
+%postun %{p_profile}
 /sbin/ldconfig
