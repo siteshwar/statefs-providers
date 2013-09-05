@@ -275,6 +275,10 @@ void MainNs::resetProperties(MainNs::Properties what)
         updateProperty("RegistrationStatus", "no-sim");
 }
 
+// TODO 2 contexkit properties are not supported yet:
+// Phone.Call and Phone.Muted
+// There is no components using it so the question
+// is should they be supported at all
 
 MainNs::MainNs(QDBusConnection &bus)
     : Namespace("Cellular", std::unique_ptr<PropertiesSource>
