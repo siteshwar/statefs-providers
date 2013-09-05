@@ -44,15 +44,8 @@ Bridge::Bridge(InternetNs *ns, QDBusConnection &bus)
 {
 }
 
-void Bridge::init_manager()
+void Bridge::process_manager_props(QVariantMap const &props)
 {
-    qDebug() << "Establish connection with connman";
-    manager_.reset(new Manager(service_name, "/", bus_));
-    auto res = sync(manager_->GetProperties());
-    if (res.isError()) {
-        qWarning() << "Can't get connman props:" << res.error();
-        return;
-    }
 
     auto update = [this](QString const &n, QVariant const &v) {
         if (n == "State") {
@@ -66,7 +59,7 @@ void Bridge::init_manager()
             , [update] (QString const &n, QDBusVariant const &v) {
                 update(n, v.variant());
             });
-    auto props = res.value();
+
     for (auto it = props.begin(); it != props.end(); ++it)
         update(it.key(), it.value());
 
@@ -93,8 +86,15 @@ void Bridge::init_manager()
 
 void Bridge::init()
 {
-    watch_->init([this]() { init_manager(); },
-                 [this]() { reset_manager(); });
+    auto init_manager = [this]() {
+        qDebug() << "Establish connection with connman";
+        manager_.reset(new Manager(service_name, "/", bus_));
+        sync(manager_->GetProperties()
+             , [this](QVariantMap const &v) {
+                 process_manager_props(v);
+             });
+    };
+    watch_->init(init_manager, [this]() { reset_manager(); });
     init_manager();
 }
 
@@ -125,23 +125,22 @@ void Bridge::process_technologies()
     current_service_ = "";
     service_.reset();
 
-    auto res = sync(manager_->GetTechnologies());
-    if (res.isError()) {
-        qWarning() << "Can't get connman technologies:" << res.error();
-        return;
-    }
-    auto techs = res.value();
-    QMap<Order, QVariantMap const*> sorted_online;
-    for (auto pp = techs.begin(); pp != techs.end(); ++pp) {
-        auto const &path = std::get<0>(*pp).path();
-        auto const &props = std::get<1>(*pp);
-        process_technology(path, props);
-    }
-    if (current_net_order_ == OrderEnd)
-        reset_properties();
+    auto process_props = [this](PathPropertiesArray const &techs) {
+        QMap<Order, QVariantMap const*> sorted_online;
+        for (auto pp = techs.begin(); pp != techs.end(); ++pp) {
+            auto const &path = std::get<0>(*pp).path();
+            auto const &props = std::get<1>(*pp);
+            process_technology(path, props);
+        }
+        if (current_net_order_ == OrderEnd)
+            reset_properties();
+    };
+
+    sync(manager_->GetTechnologies(), process_props);
 }
 
-Bridge::Status Bridge::process_service(QString const &path, QVariantMap const &props)
+Bridge::Status Bridge::process_service
+(QString const &path, QVariantMap const &props)
 {
     auto service_type = props["Type"].toString();
     auto state = props["State"].toString();
@@ -175,19 +174,19 @@ Bridge::Status Bridge::process_service(QString const &path, QVariantMap const &p
 
 Bridge::Status Bridge::process_services()
 {
-    auto res = sync(manager_->GetServices());
-    if (res.isError()) {
-        qWarning() << "Can't get connman services:" << res.error();
-        return Ignore;
-    }
-    auto services = res.value();
-    for (auto pp = services.begin(); pp != services.end(); ++pp) {
-        auto const &path = std::get<0>(*pp).path();
-        auto const &props = std::get<1>(*pp);
-        if (process_service(path, props) != Ignore)
-            return ExactMatch;
-    }
-    return Ignore;
+    Status status = Ignore;
+    auto process = [this, &status](PathPropertiesArray const &services) {
+        for (auto pp = services.begin(); pp != services.end(); ++pp) {
+            auto const &path = std::get<0>(*pp).path();
+            auto const &props = std::get<1>(*pp);
+            if (process_service(path, props) != Ignore) {
+                status = ExactMatch;
+                break;
+            }
+        }
+    };
+    sync(manager_->GetServices(), process);
+    return status;
 }
 
 Bridge::Status Bridge::process_technology(QString const &path

@@ -24,6 +24,7 @@
 
 #include "provider_bluez.hpp"
 #include <iostream>
+#include <functional>
 #include <statefs/qt/dbus.hpp>
 
 /*
@@ -88,13 +89,10 @@ void Bridge::defaultAdapterChanged(const QDBusObjectPath &v)
 
     device_.reset(new Device(service_name, v.path(), bus_));
 
-    auto res = sync(device_->GetProperties());
-    if (res.isError()) {
-        qWarning() << "BT Adapter error:" << res.error();
-        return;
-    }
-    auto props = res.value();
-    setProperties(props);
+    sync(device_->GetProperties()
+         , [this](QVariantMap const &v) {
+             setProperties(v);
+         });
 
     connect(device_.get(), &Device::PropertyChanged
             , [this](const QString &name, const QDBusVariant &value) {

@@ -49,7 +49,7 @@ private:
         OrderEnd
     };
 
-    void init_manager();
+    void process_manager_props(QVariantMap const&);
     Status process_technology(QString const&, QVariantMap const&);
     Status process_services();
     void process_technologies();
