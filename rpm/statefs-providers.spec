@@ -20,6 +20,7 @@ BuildRequires: cmake >= 2.8
 BuildRequires: pkgconfig(statefs-cpp) >= %{statefs_ver}
 BuildRequires: pkgconfig(Qt5Core)
 BuildRequires: pkgconfig(Qt5DBus)
+BuildRequires: pkgconfig(cor) >= 0.1.4
 
 %description
 %{summary}
@@ -56,6 +57,7 @@ Requires: statefs-providers-qt5 = %{version}-%{release}
 %define p_ofono -n statefs-provider-ofono
 %define p_mce -n statefs-provider-mce
 %define p_profile -n statefs-provider-profile
+%define p_keyboard -n statefs-provider-keyboard-generic
 
 %package %{p_bluez}
 Summary: BlueZ statefs provider
@@ -150,6 +152,19 @@ Provides: contextkit-plugin-profile = %{ckit_version1}
 %description %{p_profile}
 %{summary}
 
+%package %{p_keyboard}
+Summary: Generic keyboard statefs provider
+Group: Applications/System
+BuildRequires: pkgconfig(udev) >= 187
+Requires(post): /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
+Requires: %{n_common} = %{version}-%{release}
+Requires: statefs-loader-qt5
+Obsoletes: contextkit-plugin-keyboard-generic <= %{ckit_version}
+Provides: contextkit-plugin-keyboard-generic = %{ckit_version1}
+%description %{p_keyboard}
+%{summary}
+
 %prep
 %setup -q
 
@@ -242,4 +257,15 @@ statefs register %{_libdir}/statefs/libprovider-mce.so --statefs-type=qt5 || :
 statefs register %{_libdir}/statefs/libprovider-profile.so --statefs-type=qt5 || :
 
 %postun %{p_profile}
+/sbin/ldconfig
+
+%files %{p_keyboard}
+%defattr(-,root,root,-)
+%{_libdir}/statefs/libprovider-keyboard-generic.so
+
+%post %{p_keyboard}
+/sbin/ldconfig
+statefs register %{_libdir}/statefs/libprovider-keyboard-generic.so --statefs-type=qt5 || :
+
+%postun %{p_keyboard}
 /sbin/ldconfig
