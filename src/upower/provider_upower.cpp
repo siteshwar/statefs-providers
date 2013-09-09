@@ -40,11 +40,12 @@ Bridge::Bridge(PowerNs *ns, QDBusConnection &bus)
     : PropertiesSource(ns)
     , bus_(bus)
     , watch_(bus, service_name)
-    , last_values_{87.0, true, false, 878787, 0, UnknownState}
+    , default_values_{87.0, true, false, 878787, 0, UnknownState}
+    , last_values_(default_values_)
 {
 }
 
-void Bridge::updateAllProperties()
+void Bridge::update_all_props()
 {
     using namespace std::placeholders;
     auto set = std::bind(&PropertiesSource::updateProperty, this, _1, _2);
@@ -64,47 +65,86 @@ void Bridge::updateAllProperties()
             if (!is_charging || v == FullyCharged)
                 set("TimeUntilFull", 0);
         });
-    Properties props_now { device_->percentage()
-            , manager_->onBattery(), manager_->onLowBattery()
-            , device_->timeToEmpty(), device_->timeToFull()
-            , (DeviceState)device_->state() };
-    process_difference_update(last_values_, props_now, actions);
+
+    if (device_ && manager_) {
+        Properties props_now { device_->percentage()
+                , manager_->onBattery(), manager_->onLowBattery()
+                , device_->timeToEmpty(), device_->timeToFull()
+                , (DeviceState)device_->state() };
+        process_difference_update(last_values_, props_now, actions);
+    } else if (manager_) {
+        Properties props_now { 99, manager_->onBattery()
+                , manager_->onLowBattery(), 12345, 0, UnknownState };
+        process_difference_update(last_values_, props_now, actions);
+    } else {
+        process_difference_update(last_values_, default_values_, actions);
+    }
 }
 
-bool Bridge::findBattery()
+bool Bridge::try_get_battery(QString const &path)
 {
-    qDebug() << "Enumerating upower devices";
-    auto devices = sync(manager_->EnumerateDevices()).value();
-    qDebug() << "found " << devices.size() << " upower device(s)";
-    for (auto it = devices.begin(); it != devices.end(); ++it) {
-		std::unique_ptr<Device> device(new Device(service_name, it->path(), bus_));
-		auto dev_type = (DeviceType)device->type();
+    auto is_battery = [](std::unique_ptr<Device> const &p) {
+        return ((DeviceType)p->type() == Battery
+                && p->energyFull() > 0
+                && p->voltage() > 0);
+    };
+    std::unique_ptr<Device> device(new Device(service_name, path, bus_));
+    if (!is_battery(device))
+        return false;
 
-		if(dev_type == Battery && device->energyFull() > 0 && device->voltage() > 0)
-		{
-            qDebug() << it->path() << " is battery";
-			device_ = std::move(device);
-            updateAllProperties();
-            connect(device_.get(), &Device::Changed
-                    , this, &Bridge::updateAllProperties);
-			return true;
-		}
+    device_ = std::move(device);
+    device_path_ = path;
+    if (device_) {
+        connect(device_.get(), &Device::Changed
+                , this, &Bridge::update_all_props);
+    } else {
+        qWarning() << "No battery found";
     }
-    qWarning() << "No battery found";
-    return false;
+    update_all_props();
+    return true;
+}
+
+void Bridge::init_manager()
+{
+    manager_.reset(new Manager(service_name, "/org/freedesktop/UPower", bus_));
+    auto find_battery = [this](QList<QDBusObjectPath> const &devices) {
+        qDebug() << "found " << devices.size() << " upower device(s)";
+        std::find_if(devices.begin(), devices.end()
+                     , [this](QDBusObjectPath const &p) {
+                         return try_get_battery(p.path());
+                     });
+    };
+
+    qDebug() << "Enumerating upower devices";
+    sync(manager_->EnumerateDevices(), find_battery);
+    connect(manager_.get(), &Manager::Changed
+            , std::bind(&Bridge::update_all_props, this));
+    using namespace std::placeholders;
+    connect(manager_.get(), &Manager::DeviceAdded
+            , std::bind(&Bridge::try_get_battery, this, _1));
+    connect(manager_.get(), &Manager::DeviceRemoved
+            , [this](QString const &path) {
+                if (path == device_path_) {
+                    reset_device();
+                }
+            });
+}
+
+void Bridge::reset_device()
+{
+    device_.reset();
+    device_path_ = "";
+    update_all_props();
 }
 
 void Bridge::init()
 {
-    auto init_manager = [this]() {
-        manager_.reset(new Manager(service_name, "/org/freedesktop/UPower", bus_));
-        findBattery();
-    };
     auto reset_manager = [this]() {
-        device_.reset();
+        reset_device();
         manager_.reset();
+        update_all_props();
     };
-    watch_.init(init_manager, reset_manager);
+    watch_.init([this]() { init_manager(); }, reset_manager);
     init_manager();
 }
 

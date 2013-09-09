@@ -114,19 +114,21 @@ public:
 
 private:
 
-    void initManager();
-    void updateAllProperties();
-    bool findBattery();
-    void watchUPower();
+    void update_all_props();
+    void init_manager();
+    void reset_device();
+    bool try_get_battery(QString const &);
 
     QDBusConnection &bus_;
     QDBusObjectPath defaultAdapter_;
     std::unique_ptr<Manager> manager_;
     std::unique_ptr<Device> device_;
+    QString device_path_;
     statefs::qt::ServiceWatch watch_;
 
     typedef std::tuple<double, bool, bool, qlonglong,
                        qlonglong, DeviceState> Properties;
+    const Properties default_values_;
     Properties last_values_;
 };
 
