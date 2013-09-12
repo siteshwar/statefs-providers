@@ -126,7 +126,6 @@ void Bridge::process_technologies()
     service_.reset();
 
     auto process_props = [this](PathPropertiesArray const &techs) {
-        QMap<Order, QVariantMap const*> sorted_online;
         for (auto pp = techs.begin(); pp != techs.end(); ++pp) {
             auto const &path = std::get<0>(*pp).path();
             auto const &props = std::get<1>(*pp);
@@ -137,34 +136,39 @@ void Bridge::process_technologies()
     };
 
     sync(manager_->GetTechnologies(), process_props);
+    if (current_service_ == "")
+        process_services();
 }
 
 Bridge::Status Bridge::process_service
 (QString const &path, QVariantMap const &props)
 {
-    auto service_type = props["Type"].toString();
-    auto state = props["State"].toString();
-    auto name = props["Name"].toString();
+    auto order = service_order(props);
 
-    auto order = get_order(service_type);
-    if (order > current_net_order_ || state != "online")
+    if (order > current_net_order_)
         return Ignore;
 
+    auto name = props["Name"].toString();
     qDebug() << "Service " << name << " is online";
+
     current_net_order_ = order;
     current_service_ = path;
+
+    updateProperty("NetworkName", name);
+    updateProperty("SignalStrength", props["Strength"]);
+    updateProperty("NetworkState", props["State"]);
+
+    service_.reset(new Service(service_name, path, bus_));
+
     auto update = [this](QString const &n, QVariant const &v) {
         if (n == "Name")
             updateProperty("NetworkName", v);
         else if (n == "Strength")
             updateProperty("SignalStrength", v.toUInt());
-        else if (n == "State" && !v.toBool())
+        else if (n == "State" && v.toString() != "online")
             process_technologies();
     };
-    for (auto pp = props.begin(); pp != props.end(); ++pp)
-        update(pp.key(), pp.value());
 
-    service_.reset(new Service(service_name, path, bus_));
     connect(service_.get(), &Service::PropertyChanged
             , [update](QString const &n, QDBusVariant const&v) {
                 update(n, v.variant());
@@ -172,18 +176,38 @@ Bridge::Status Bridge::process_service
     return Match;
 }
 
+Bridge::Order Bridge::service_order(QVariantMap const &props)
+{
+    auto service_type = props["Type"].toString();
+    auto state = props["State"].toString();
+    auto order = get_order(service_type);
+
+    return (state == "online") ? order : OrderEnd;
+}
+
 Bridge::Status Bridge::process_services()
 {
     Status status = Ignore;
-    auto process = [this, &status](PathPropertiesArray const &services) {
+    auto process = [this, &status]
+        (PathPropertiesArray const &services) {
+
+        decltype(services.begin()) chosen;
+        QString chosen_path;
+        QVariantMap const *chosen_props;
+        Order chosen_order = OrderEnd;
+
         for (auto pp = services.begin(); pp != services.end(); ++pp) {
             auto const &path = std::get<0>(*pp).path();
             auto const &props = std::get<1>(*pp);
-            if (process_service(path, props) != Ignore) {
-                status = ExactMatch;
-                break;
+            auto order = service_order(props);
+            if (order < chosen_order) {
+                chosen_path = path;
+                chosen_props = &props;
+                chosen_order = order;
             }
         }
+        if (chosen_order != OrderEnd)
+            status = process_service(chosen_path, *chosen_props);
     };
     sync(manager_->GetServices(), process);
     return status;

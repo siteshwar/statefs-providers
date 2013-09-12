@@ -54,6 +54,7 @@ private:
     Status process_services();
     void process_technologies();
     Status process_service(QString const&, QVariantMap const &);
+    Order service_order(QVariantMap const &);
     void reset_manager();
     void reset_properties();
     Order get_order(QString const&);
