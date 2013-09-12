@@ -20,7 +20,7 @@ BuildRequires: cmake >= 2.8
 BuildRequires: pkgconfig(statefs-cpp) >= %{statefs_ver}
 BuildRequires: pkgconfig(Qt5Core)
 BuildRequires: pkgconfig(Qt5DBus)
-BuildRequires: pkgconfig(cor) >= 0.1.4
+BuildRequires: pkgconfig(cor) >= 0.1.8
 
 %description
 %{summary}

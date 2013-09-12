@@ -23,9 +23,12 @@
  */
 
 #include "provider_upower.hpp"
+
+#include <cor/util.hpp>
+#include <statefs/qt/dbus.hpp>
+
 #include <math.h>
 #include <iostream>
-#include <statefs/qt/dbus.hpp>
 
 
 namespace statefs { namespace upower {
@@ -71,13 +74,13 @@ void Bridge::update_all_props()
                 , manager_->onBattery(), manager_->onLowBattery()
                 , device_->timeToEmpty(), device_->timeToFull()
                 , (DeviceState)device_->state() };
-        process_difference_update(last_values_, props_now, actions);
+        cor::copy_apply_if_changed(last_values_, props_now, actions);
     } else if (manager_) {
         Properties props_now { 99, manager_->onBattery()
                 , manager_->onLowBattery(), 12345, 0, UnknownState };
-        process_difference_update(last_values_, props_now, actions);
+        cor::copy_apply_if_changed(last_values_, props_now, actions);
     } else {
-        process_difference_update(last_values_, default_values_, actions);
+        cor::copy_apply_if_changed(last_values_, default_values_, actions);
     }
 }
 
@@ -118,10 +121,10 @@ void Bridge::init_manager()
     qDebug() << "Enumerating upower devices";
     sync(manager_->EnumerateDevices(), find_battery);
     connect(manager_.get(), &Manager::Changed
-            , std::bind(&Bridge::update_all_props, this));
+            , this, &Bridge::update_all_props);
     using namespace std::placeholders;
     connect(manager_.get(), &Manager::DeviceAdded
-            , std::bind(&Bridge::try_get_battery, this, _1));
+            , this, &Bridge::try_get_battery);
     connect(manager_.get(), &Manager::DeviceRemoved
             , [this](QString const &path) {
                 if (path == device_path_) {
