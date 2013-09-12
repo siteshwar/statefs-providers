@@ -1,3 +1,4 @@
+#include <cor/trace.hpp>
 #include <statefs/qt/ns.hpp>
 #include <QDebug>
 
@@ -52,7 +53,7 @@ void Namespace::updateProperty(const QString &name, const QVariant &value)
     if (it != setters_for_props_.end()) {
         auto &set = it->second;
         auto encoded = valueEncode(value);
-        qDebug() << name << "=" << value << "->" << encoded;
+        trace() << name << "=" << value << "->" << encoded;
         set(encoded.toStdString());
     }
 }
