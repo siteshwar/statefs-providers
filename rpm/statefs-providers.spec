@@ -6,7 +6,7 @@
 %define maemo_ver1 0.7.31
 %define meego_ver 0.1.0
 %define meego_ver1 0.1.0.1
-%define statefs_ver 0.3.8
+%define statefs_ver 0.3.13
 
 Summary: Statefs providers
 Name: statefs-providers
@@ -30,7 +30,7 @@ BuildRequires: pkgconfig(cor) >= 0.1.8
 
 %package %{p_common}
 Summary: Package to replace contextkit plugins
-Group: Applications/System
+Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires: statefs >= %{statefs_ver}
@@ -59,9 +59,17 @@ Requires: statefs-providers-qt5 = %{version}-%{release}
 %define p_profile -n statefs-provider-profile
 %define p_keyboard -n statefs-provider-keyboard-generic
 
+%define p_inout_bluetooth -n statefs-provider-inout-bluetooth
+%define p_inout_power -n statefs-provider-inout-power
+%define p_inout_network -n statefs-provider-inout-network
+%define p_inout_cellular -n statefs-provider-inout-cellular
+%define p_inout_mce -n statefs-provider-inout-mce
+%define p_inout_profile -n statefs-provider-inout-profile
+%define p_inout_keyboard -n statefs-provider-inout-keyboard
+
 %package %{p_bluez}
 Summary: BlueZ statefs provider
-Group: Applications/System
+Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
@@ -70,13 +78,13 @@ Obsoletes: contextkit-plugin-bluez <= %{ckit_version}
 Provides: contextkit-plugin-bluez = %{ckit_version1}
 Obsoletes: contextkit-plugin-bluetooth <= %{ckit_version}
 Provides: contextkit-plugin-bluetooth = %{ckit_version1}
-Provides: statefs-provider-bluetooth = %{version}
+Provides: statefs-provider-bluetooth = %{version}-%{release}
 %description %{p_bluez}
 %{summary}
 
 %package %{p_upower}
 Summary: Upower statefs provider
-Group: Applications/System
+Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
@@ -88,13 +96,13 @@ Obsoletes: contextkit-plugin-upower <= %{ckit_version}
 Provides: contextkit-plugin-upower = %{ckit_version1}
 Obsoletes: contextkit-plugin-power <= %{ckit_version}
 Provides: contextkit-plugin-power = %{ckit_version1}
-Provides: statefs-provider-power = %{version}
+Provides: statefs-provider-power = %{version}-%{release}
 %description %{p_upower}
 %{summary}
 
 %package %{p_connman}
 Summary: ConnMan statefs provider
-Group: Applications/System
+Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
@@ -104,13 +112,14 @@ Obsoletes: contextkit-meego-internet <= %{meego_ver}
 Provides: contextkit-meego-internet = %{meego_ver1}
 Obsoletes: contextkit-plugin-connman <= %{ckit_version}
 Provides: contextkit-plugin-connman = %{ckit_version1}
-Provides: statefs-provider-internet = %{version}
+Provides: statefs-provider-internet = %{version}-%{release}
+Provides: statefs-provider-network = %{version}-%{release}
 %description %{p_connman}
 %{summary}
 
 %package %{p_ofono}
 Summary: oFono statefs provider
-Group: Applications/System
+Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
@@ -124,13 +133,13 @@ Obsoletes: contextkit-plugin-cellular <= %{ckit_version}
 Provides: contextkit-plugin-cellular = %{ckit_version1}
 Obsoletes: contextkit-plugin-ofono <= %{ckit_version}
 Provides: contextkit-plugin-ofono = %{ckit_version1}
-Provides: statefs-provider-cellular = %{version}
+Provides: statefs-provider-cellular = %{version}-%{release}
 %description %{p_ofono}
 %{summary}
 
 %package %{p_mce}
 Summary: MCE statefs provider
-Group: Applications/System
+Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
@@ -145,7 +154,7 @@ Provides: contextkit-plugin-mce = %{ckit_version1}
 
 %package %{p_profile}
 Summary: Profiled statefs provider
-Group: Applications/System
+Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
@@ -158,7 +167,7 @@ Provides: contextkit-plugin-profile = %{ckit_version1}
 
 %package %{p_keyboard}
 Summary: Generic keyboard statefs provider
-Group: Applications/System
+Group: System Environment/Libraries
 BuildRequires: pkgconfig(udev) >= 187
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
@@ -166,23 +175,99 @@ Requires: %{n_common} = %{version}-%{release}
 Requires: statefs-loader-qt5
 Obsoletes: contextkit-plugin-keyboard-generic <= %{ckit_version}
 Provides: contextkit-plugin-keyboard-generic = %{ckit_version1}
+Provides: statefs-provider-keyboard-%{version}-%{release}
 %description %{p_keyboard}
 %{summary}
 
+# inout providers
+
+%package %{p_inout_bluetooth}
+Summary: Statefs inout provider: bluetooth properties
+Group: System Environment/Libraries
+Requires: statefs = %{statefs_ver}
+Provides: statefs-provider-bluetooth = %{version}-%{release}
+BuildArch: noarch
+%description %{p_inout_bluetooth}
+%{summary}
+
+%package %{p_inout_power}
+Summary: Statefs inout provider: power subsystem properties
+Group: System Environment/Libraries
+Requires: statefs = %{statefs_ver}
+Provides: statefs-provider-power = %{version}-%{release}
+Provides: statefs-provider-power-emu = 0.3.13
+Obsoletes: statefs-provider-power-emu < 0.3.13
+BuildArch: noarch
+%description %{p_inout_power}
+%{summary}
+
+%package %{p_inout_network}
+Summary: Statefs inout provider: network properties
+Group: System Environment/Libraries
+Requires: statefs = %{statefs_ver}
+Provides: statefs-provider-internet = %{version}-%{release}
+Provides: statefs-provider-network = %{version}-%{release}
+BuildArch: noarch
+%description %{p_inout_network}
+%{summary}
+
+%package %{p_inout_cellular}
+Summary: Statefs inout provider: cellular network properties
+Group: System Environment/Libraries
+Requires: statefs = %{statefs_ver}
+Provides: statefs-provider-cellular = %{version}-%{release}
+BuildArch: noarch
+%description %{p_inout_cellular}
+%{summary}
+
+%package %{p_inout_mce}
+Summary: Statefs inout provider: mce properties
+Group: System Environment/Libraries
+Requires: statefs = %{statefs_ver}
+Provides: statefs-provider-mce = %{version}-%{release}
+BuildArch: noarch
+%description %{p_inout_mce}
+%{summary}
+
+%package %{p_inout_profile}
+Summary: Statefs inout provider: profile information
+Group: System Environment/Libraries
+Requires: statefs = %{statefs_ver}
+Provides: statefs-provider-profile = %{version}-%{release}
+BuildArch: noarch
+%description %{p_inout_profile}
+%{summary}
+
+%package %{p_inout_keyboard}
+Summary: Statefs inout provider: keyboard information
+Group: System Environment/Libraries
+Requires: statefs = %{statefs_ver}
+Provides: statefs-provider-keyboard = %{version}-%{release}
+BuildArch: noarch
+%description %{p_inout_keyboard}
+%{summary}
+
+
 %prep
 %setup -q
+
 
 %build
 %cmake -DSTATEFS_QT_VERSION=%{version}
 make %{?jobs:-j%jobs}
 make doc
+pushd inout && %cmake && popd
+
 
 %install
 rm -rf %{buildroot}
 make install DESTDIR=%{buildroot}
+pushd inout && make install DESTDIR=%{buildroot} && popd
+
 
 %clean
 rm -rf %{buildroot}
+
 
 %files %{p_common}
 %defattr(-,root,root,-)
@@ -294,3 +379,76 @@ rm -rf %{buildroot}
 %postun %{p_keyboard}
 /sbin/ldconfig
 %statefs_cleanup || :
+
+# inout providers
+
+%files %{p_inout_bluetooth}
+%defattr(-,root,root,-)
+%{_statefs_datadir}/inout-bluetooth.conf
+
+%posttrans %{p_inout_bluetooth}
+%statefs_register inout %{_statefs_datadir}/inout-bluetooth.conf || :
+
+%postun %{p_inout_bluetooth}
+%statefs_cleanup || :
+
+%files %{p_inout_power}
+%defattr(-,root,root,-)
+%{_statefs_datadir}/inout-power.conf
+
+%posttrans %{p_inout_power}
+%statefs_register inout %{_statefs_datadir}/inout-power.conf || :
+
+%postun %{p_inout_power}
+%statefs_cleanup || :
+
+%files %{p_inout_network}
+%defattr(-,root,root,-)
+%{_statefs_datadir}/inout-network.conf
+
+%posttrans %{p_inout_network}
+%statefs_register inout %{_statefs_datadir}/inout-network.conf || :
+
+%postun %{p_inout_network}
+%statefs_cleanup || :
+
+%files %{p_inout_cellular}
+%defattr(-,root,root,-)
+%{_statefs_datadir}/inout-cellular.conf
+
+%posttrans %{p_inout_cellular}
+%statefs_register inout %{_statefs_datadir}/inout-cellular.conf || :
+
+%postun %{p_inout_cellular}
+%statefs_cleanup || :
+
+%files %{p_inout_mce}
+%defattr(-,root,root,-)
+%{_statefs_datadir}/inout-mce.conf
+
+%posttrans %{p_inout_mce}
+%statefs_register inout %{_statefs_datadir}/inout-mce.conf || :
+
+%postun %{p_inout_mce}
+%statefs_cleanup || :
+
+%files %{p_inout_profile}
+%defattr(-,root,root,-)
+%{_statefs_datadir}/inout-profile.conf
+
+%posttrans %{p_inout_profile}
+%statefs_register inout %{_statefs_datadir}/inout-profile.conf || :
+
+%postun %{p_inout_profile}
+%statefs_cleanup || :
+
+%files %{p_inout_keyboard}
+%defattr(-,root,root,-)
+%{_statefs_datadir}/inout-keyboard.conf
+
+%posttrans %{p_inout_keyboard}
+%statefs_register inout %{_statefs_datadir}/inout-keyboard.conf || :
+
+%postun %{p_inout_keyboard}
+%statefs_cleanup || :
+
