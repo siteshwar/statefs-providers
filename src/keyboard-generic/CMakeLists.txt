@@ -1,5 +1,5 @@
 set(CMAKE_AUTOMOC TRUE)
-set(SELF keyboard-generic)
+set(SELF keyboard_generic)
 
 pkg_check_modules(UDEV libudev REQUIRED)
 pkg_check_modules(COR cor REQUIRED)
