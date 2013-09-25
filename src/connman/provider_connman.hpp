@@ -66,6 +66,8 @@ private:
     Order current_net_order_;
     QString current_technology_;
     QString current_service_;
+    std::map<QString, QString> net_type_map_;
+    std::map<QString, QString> state_map_;
 };
 
 class InternetNs : public statefs::qt::Namespace

@@ -41,6 +41,18 @@ Bridge::Bridge(InternetNs *ns, QDBusConnection &bus)
     , bus_(bus)
     , watch_(new ServiceWatch(bus, service_name))
     , current_net_order_(OrderEnd)
+    , net_type_map_{
+    {"wifi", "WLAN"}
+    , {"gprs", "GPRS"}
+    , {"cellular", "GPRS"}
+    , {"edge", "GPRS"}
+    , {"umts", "GPRS"}
+    , {"ethernet", "ethernet"}}
+    , state_map_{
+        {"offline", "disconnected"}
+        , {"idle", "disconnected"}
+        , {"online", "connected"}
+        , {"ready", "connected"}}
 {
 }
 
@@ -49,7 +61,7 @@ void Bridge::process_manager_props(QVariantMap const &props)
 
     auto update = [this](QString const &n, QVariant const &v) {
         if (n == "State") {
-            if (v == "online")
+            if (state_map_[v.toString()] == "connected")
                 process_technologies();
             else
                 reset_properties();
@@ -155,8 +167,11 @@ Bridge::Status Bridge::process_service
     current_service_ = path;
 
     updateProperty("NetworkName", name);
-    updateProperty("SignalStrength", props["Strength"]);
-    updateProperty("NetworkState", props["State"]);
+    updateProperty("SignalStrength", props["Strength"].toUInt());
+    auto state = state_map_[props["State"].toString()];
+    updateProperty("NetworkState", state);
+    auto net_type = net_type_map_[props["Type"].toString()];
+    updateProperty("NetworkType", net_type);
 
     service_.reset(new Service(service_name, path, bus_));
 
@@ -165,8 +180,11 @@ Bridge::Status Bridge::process_service
             updateProperty("NetworkName", v);
         else if (n == "Strength")
             updateProperty("SignalStrength", v.toUInt());
-        else if (n == "State" && v.toString() != "online")
-            process_technologies();
+        else if (n == "State") {
+            auto state = state_map_[v.toString()];
+            if (state != "connected")
+                process_technologies();
+        }
     };
 
     connect(service_.get(), &Service::PropertyChanged
@@ -179,10 +197,10 @@ Bridge::Status Bridge::process_service
 Bridge::Order Bridge::service_order(QVariantMap const &props)
 {
     auto service_type = props["Type"].toString();
-    auto state = props["State"].toString();
+    auto state = state_map_[props["State"].toString()];
     auto order = get_order(service_type);
 
-    return (state == "online") ? order : OrderEnd;
+    return (state == "connected") ? order : OrderEnd;
 }
 
 Bridge::Status Bridge::process_services()
@@ -226,15 +244,13 @@ Bridge::Status Bridge::process_technology(QString const &path
     if (order > current_net_order_)
         return Ignore;
 
-    updateProperty("NetworkType", net_type);
     qDebug() << "Technology (type=" << net_type << ") is online";
-    updateProperty("NetworkState", "online");
+    updateProperty("NetworkType", net_type_map_[net_type]);
+    updateProperty("NetworkState", "connected");
     current_net_order_ = order;
     current_technology_ = path;
-    if (order == WiFi || order == Cellular)
-        return process_services();
-
-    return Match;
+    auto status = process_services();
+    return (order == WiFi || order == Cellular) ? status : Match;
 }
 
 InternetNs::InternetNs(QDBusConnection &bus)
@@ -248,7 +264,7 @@ InternetNs::InternetNs(QDBusConnection &bus)
             , {"SignalStrength", "0"}})
 {
     addProperty("NetworkType", "");
-    addProperty("NetworkState", "offline");
+    addProperty("NetworkState", "disconnected");
     addProperty("NetworkName", "");
     addProperty("TrafficIn", "0");
     addProperty("TrafficOut", "0");
