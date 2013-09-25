@@ -8,5 +8,6 @@ install(FILES
   inout-network.conf
   inout-profile.conf
   inout-power.conf
+  inout-location.conf
   DESTINATION share/statefs
 )

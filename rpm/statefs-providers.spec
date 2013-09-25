@@ -58,6 +58,8 @@ Requires: statefs-providers-qt5 = %{version}-%{release}
 %define p_mce -n statefs-provider-mce
 %define p_profile -n statefs-provider-profile
 %define p_keyboard -n statefs-provider-keyboard-generic
+# location provider placeholder
+#%define p_keyboard -n statefs-provider-location-geoclue
 
 %define p_inout_bluetooth -n statefs-provider-inout-bluetooth
 %define p_inout_power -n statefs-provider-inout-power
@@ -66,6 +68,7 @@ Requires: statefs-providers-qt5 = %{version}-%{release}
 %define p_inout_mce -n statefs-provider-inout-mce
 %define p_inout_profile -n statefs-provider-inout-profile
 %define p_inout_keyboard -n statefs-provider-inout-keyboard
+%define p_inout_location -n statefs-provider-inout-location
 
 %package %{p_bluez}
 Summary: BlueZ statefs provider
@@ -179,6 +182,24 @@ Provides: statefs-provider-keyboard-%{version}-%{release}
 %description %{p_keyboard}
 %{summary}
 
+# location provider placeholder
+
+#%package %{p_location}
+#Summary: Statefs provider: geoclue location information
+#Group: System Environment/Libraries
+#Requires: statefs = %{statefs_ver}
+#Provides: statefs-provider-location = %{version}-%{release}
+#Obsoletes: contextkit-meego-location-geoclue <= %{meego_ver}
+#Provides: contextkit-meego-location-geoclue = %{meego_ver1}
+#Obsoletes: contextkit-plugin-location-gypsy <= %{ckit_version}
+#Provides: contextkit-plugin-location-gypsy = %{ckit_version1}
+#Obsoletes: contextkit-plugin-location-skyhook <= %{ckit_version}
+#Provides: contextkit-plugin-location-skyhook = %{ckit_version1}
+#BuildArch: noarch
+#%description %{p_location}
+#%{summary}
+#
+
 # inout providers
 
 %package %{p_inout_bluetooth}
@@ -245,6 +266,15 @@ Requires: statefs = %{statefs_ver}
 Provides: statefs-provider-keyboard = %{version}-%{release}
 BuildArch: noarch
 %description %{p_inout_keyboard}
+%{summary}
+
+%package %{p_inout_location}
+Summary: Statefs inout provider: location information
+Group: System Environment/Libraries
+Requires: statefs = %{statefs_ver}
+Provides: statefs-provider-location = %{version}-%{release}
+BuildArch: noarch
+%description %{p_inout_location}
 %{summary}
 
 
@@ -450,5 +480,15 @@ rm -rf %{buildroot}
 %statefs_register inout %{_statefs_datadir}/inout-keyboard.conf || :
 
 %postun %{p_inout_keyboard}
+%statefs_cleanup || :
+
+%files %{p_inout_location}
+%defattr(-,root,root,-)
+%{_statefs_datadir}/inout-location.conf
+
+%posttrans %{p_inout_location}
+%statefs_register inout %{_statefs_datadir}/inout-location.conf || :
+
+%postun %{p_inout_location}
 %statefs_cleanup || :
 
