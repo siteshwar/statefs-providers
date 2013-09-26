@@ -1,13 +1,13 @@
 PROJECT(statefs-inout-providers NONE)
 
 install(FILES
-  inout-bluetooth.conf
-  inout-cellular.conf
-  inout-keyboard.conf
-  inout-mce.conf
-  inout-network.conf
-  inout-profile.conf
-  inout-power.conf
-  inout-location.conf
+  inout_bluetooth.conf
+  inout_cellular.conf
+  inout_keyboard.conf
+  inout_mce.conf
+  inout_network.conf
+  inout_profile.conf
+  inout_power.conf
+  inout_location.conf
   DESTINATION share/statefs
 )

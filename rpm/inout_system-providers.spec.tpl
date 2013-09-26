@@ -1,13 +1,22 @@
-%files %{{p_inout_{name}}} -f inout_{name}.files
+
+%files %{{p_{name}}} -f {name}.files
 %defattr(-,root,root,-)
 
-%posttrans %{{p_inout_{name}}}
-%statefs_provider_register qt5 inout_{name} system
-%statefs_provider_unregister qt5 inout_{name} user || :
+%pretrans %{{p_{name}}}
+%statefs_pretrans || :
 
-%post %{{p_inout_{name}}} -p /sbin/ldconfig
+%posttrans %{{p_{name}}}
+%statefs_provider_register inout {name} system
+%statefs_provider_unregister inout {name} user
+%statefs_posttrans || :
 
-%postun %{{p_inout_{name}}}
+%post %{{p_{name}}} -p /sbin/ldconfig
+
+%preun %{{p_{name}}}
+%statefs_preun || :
+
+%postun %{{p_{name}}}
 /sbin/ldconfig
-%statefs_provider_unregister qt5 inout_{name} system
-%statefs_cleanup || :
+%statefs_provider_unregister inout {name} system
+%statefs_cleanup
+%statefs_postun || :

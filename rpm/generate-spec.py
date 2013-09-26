@@ -10,6 +10,8 @@ class Actions:
                   , "keyboard_generic"]
     qt5_user = ["profile"]
 
+    old_names = { "keyboard_generic" : "keyboard-generic" }
+
     inout_system = ["bluetooth", "power", "network", "cellular", "mce"
                     , "keyboard", "location"]
     inout_user = ["profile"]
@@ -20,7 +22,8 @@ class Actions:
     def replace__(self, tpl, src, **kwargs):
         res = ""
         for name in src:
-            res += tpl.format(name = name, **kwargs)
+            old_name = Actions.old_names.get(name, name)
+            res += tpl.format(name = name, old_name=old_name, **kwargs)
         return res.split("\n")
 
     def providers(self, name):
@@ -45,6 +48,9 @@ def replaced(l):
     actions = Actions(l)
     (part, name) = m.group(1).split("-")
     return getattr(actions, part)(name)
+
+Actions.inout_user = ["inout_" + a for a in Actions.inout_user]
+Actions.inout_system = ["inout_" + a for a in Actions.inout_system]
 
 with open("statefs-providers.spec.tpl") as f:
     lines = f.readlines()
