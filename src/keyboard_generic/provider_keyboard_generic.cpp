@@ -22,7 +22,7 @@
  * http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
  */
 
-#include "provider_keyboard-generic.hpp"
+#include "provider_keyboard_generic.hpp"
 
 #include <cor/udev.hpp>
 #include <linux/input.h>

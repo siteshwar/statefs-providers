@@ -60,6 +60,6 @@ add_subdirectory(src/connman)
 add_subdirectory(src/ofono)
 add_subdirectory(src/mce)
 add_subdirectory(src/profile)
-add_subdirectory(src/keyboard-generic)
+add_subdirectory(src/keyboard_generic)
 add_subdirectory(tests)
 
