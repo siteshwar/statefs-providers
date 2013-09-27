@@ -6,7 +6,7 @@
 %define maemo_ver1 0.7.31
 %define meego_ver 0.1.0
 %define meego_ver1 0.1.0.1
-%define statefs_ver 0.3.14
+%define statefs_ver 0.3.15
 
 Summary: Statefs providers
 Name: statefs-providers
@@ -320,8 +320,8 @@ rm -rf %{buildroot}
 %files %{p_bluez} -f bluez.files
 %defattr(-,root,root,-)
 
-%pretrans %{p_bluez}
-%statefs_pretrans || :
+%pre %{p_bluez}
+%statefs_pre || :
 
 %posttrans %{p_bluez}
 %statefs_provider_register qt5 bluez system
@@ -342,8 +342,8 @@ statefs unregister %{_statefs_libdir}/libprovider-bluez.so
 %files %{p_upower} -f upower.files
 %defattr(-,root,root,-)
 
-%pretrans %{p_upower}
-%statefs_pretrans || :
+%pre %{p_upower}
+%statefs_pre || :
 
 %posttrans %{p_upower}
 %statefs_provider_register qt5 upower system
@@ -364,8 +364,8 @@ statefs unregister %{_statefs_libdir}/libprovider-upower.so
 %files %{p_connman} -f connman.files
 %defattr(-,root,root,-)
 
-%pretrans %{p_connman}
-%statefs_pretrans || :
+%pre %{p_connman}
+%statefs_pre || :
 
 %posttrans %{p_connman}
 %statefs_provider_register qt5 connman system
@@ -386,8 +386,8 @@ statefs unregister %{_statefs_libdir}/libprovider-connman.so
 %files %{p_ofono} -f ofono.files
 %defattr(-,root,root,-)
 
-%pretrans %{p_ofono}
-%statefs_pretrans || :
+%pre %{p_ofono}
+%statefs_pre || :
 
 %posttrans %{p_ofono}
 %statefs_provider_register qt5 ofono system
@@ -408,8 +408,8 @@ statefs unregister %{_statefs_libdir}/libprovider-ofono.so
 %files %{p_mce} -f mce.files
 %defattr(-,root,root,-)
 
-%pretrans %{p_mce}
-%statefs_pretrans || :
+%pre %{p_mce}
+%statefs_pre || :
 
 %posttrans %{p_mce}
 %statefs_provider_register qt5 mce system
@@ -430,8 +430,8 @@ statefs unregister %{_statefs_libdir}/libprovider-mce.so
 %files %{p_keyboard_generic} -f keyboard_generic.files
 %defattr(-,root,root,-)
 
-%pretrans %{p_keyboard_generic}
-%statefs_pretrans || :
+%pre %{p_keyboard_generic}
+%statefs_pre || :
 
 %posttrans %{p_keyboard_generic}
 %statefs_provider_register qt5 keyboard_generic system
@@ -453,8 +453,8 @@ statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so
 %files %{p_profile} -f profile.files
 %defattr(-,root,root,-)
 
-%pretrans %{p_profile}
-%statefs_pretrans || :
+%pre %{p_profile}
+%statefs_pre || :
 
 %posttrans %{p_profile}
 %statefs_provider_register qt5 profile
@@ -476,8 +476,8 @@ statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so
 %files %{p_inout_bluetooth} -f inout_bluetooth.files
 %defattr(-,root,root,-)
 
-%pretrans %{p_inout_bluetooth}
-%statefs_pretrans || :
+%pre %{p_inout_bluetooth}
+%statefs_pre || :
 
 %posttrans %{p_inout_bluetooth}
 %statefs_provider_register inout inout_bluetooth system
@@ -498,8 +498,8 @@ statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so
 %files %{p_inout_power} -f inout_power.files
 %defattr(-,root,root,-)
 
-%pretrans %{p_inout_power}
-%statefs_pretrans || :
+%pre %{p_inout_power}
+%statefs_pre || :
 
 %posttrans %{p_inout_power}
 %statefs_provider_register inout inout_power system
@@ -520,8 +520,8 @@ statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so
 %files %{p_inout_network} -f inout_network.files
 %defattr(-,root,root,-)
 
-%pretrans %{p_inout_network}
-%statefs_pretrans || :
+%pre %{p_inout_network}
+%statefs_pre || :
 
 %posttrans %{p_inout_network}
 %statefs_provider_register inout inout_network system
@@ -542,8 +542,8 @@ statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so
 %files %{p_inout_cellular} -f inout_cellular.files
 %defattr(-,root,root,-)
 
-%pretrans %{p_inout_cellular}
-%statefs_pretrans || :
+%pre %{p_inout_cellular}
+%statefs_pre || :
 
 %posttrans %{p_inout_cellular}
 %statefs_provider_register inout inout_cellular system
@@ -564,8 +564,8 @@ statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so
 %files %{p_inout_mce} -f inout_mce.files
 %defattr(-,root,root,-)
 
-%pretrans %{p_inout_mce}
-%statefs_pretrans || :
+%pre %{p_inout_mce}
+%statefs_pre || :
 
 %posttrans %{p_inout_mce}
 %statefs_provider_register inout inout_mce system
@@ -586,8 +586,8 @@ statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so
 %files %{p_inout_keyboard} -f inout_keyboard.files
 %defattr(-,root,root,-)
 
-%pretrans %{p_inout_keyboard}
-%statefs_pretrans || :
+%pre %{p_inout_keyboard}
+%statefs_pre || :
 
 %posttrans %{p_inout_keyboard}
 %statefs_provider_register inout inout_keyboard system
@@ -608,8 +608,8 @@ statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so
 %files %{p_inout_location} -f inout_location.files
 %defattr(-,root,root,-)
 
-%pretrans %{p_inout_location}
-%statefs_pretrans || :
+%pre %{p_inout_location}
+%statefs_pre || :
 
 %posttrans %{p_inout_location}
 %statefs_provider_register inout inout_location system
@@ -631,8 +631,8 @@ statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so
 %files %{p_inout_profile} -f inout_profile.files
 %defattr(-,root,root,-)
 
-%pretrans %{p_inout_profile}
-%statefs_pretrans || :
+%pre %{p_inout_profile}
+%statefs_pre || :
 
 %posttrans %{p_inout_profile}
 %statefs_provider_register inout inout_profile system

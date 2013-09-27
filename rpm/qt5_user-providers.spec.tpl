@@ -2,8 +2,8 @@
 %files %{{p_{name}}} -f {name}.files
 %defattr(-,root,root,-)
 
-%pretrans %{{p_{name}}}
-%statefs_pretrans || :
+%pre %{{p_{name}}}
+%statefs_pre || :
 
 %posttrans %{{p_{name}}}
 %statefs_provider_register qt5 {name}
