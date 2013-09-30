@@ -16,6 +16,14 @@ License: LGPLv2
 Group: System Environment/Libraries
 URL: http://github.com/nemomobile/statefs-providers
 Source0: %{name}-%{version}.tar.bz2
+Source1: generate-spec.py
+Source2: inout-install.spec.tpl
+Source3: inout_system-providers.spec.tpl
+Source4: inout_user-providers.spec.tpl
+Source5: qt5-install.spec.tpl
+Source6: qt5_system-providers.spec.tpl
+Source7: qt5_user-providers.spec.tpl
+Source8: statefs-providers.spec.tpl
 BuildRequires: cmake >= 2.8
 BuildRequires: statefs >= %{statefs_ver}
 BuildRequires: pkgconfig(statefs-cpp) >= %{statefs_ver}
