@@ -194,7 +194,7 @@ Provides: statefs-provider-keyboard = %{version}-%{release}
 %package %{p_inout_bluetooth}
 Summary: Statefs inout provider: bluetooth properties
 Group: System Environment/Libraries
-Requires: statefs = %{statefs_ver}
+Requires: statefs >= %{statefs_ver}
 Provides: statefs-provider-bluetooth = %{version}-%{release}
 BuildArch: noarch
 %description %{p_inout_bluetooth}
@@ -203,7 +203,7 @@ BuildArch: noarch
 %package %{p_inout_power}
 Summary: Statefs inout provider: power subsystem properties
 Group: System Environment/Libraries
-Requires: statefs = %{statefs_ver}
+Requires: statefs >= %{statefs_ver}
 Provides: statefs-provider-power = %{version}-%{release}
 Provides: statefs-provider-power-emu = 0.3.13
 Obsoletes: statefs-provider-power-emu < 0.3.13
@@ -214,7 +214,7 @@ BuildArch: noarch
 %package %{p_inout_network}
 Summary: Statefs inout provider: network properties
 Group: System Environment/Libraries
-Requires: statefs = %{statefs_ver}
+Requires: statefs >= %{statefs_ver}
 Provides: statefs-provider-internet = %{version}-%{release}
 Provides: statefs-provider-network = %{version}-%{release}
 BuildArch: noarch
@@ -224,7 +224,7 @@ BuildArch: noarch
 %package %{p_inout_cellular}
 Summary: Statefs inout provider: cellular network properties
 Group: System Environment/Libraries
-Requires: statefs = %{statefs_ver}
+Requires: statefs >= %{statefs_ver}
 Provides: statefs-provider-cellular = %{version}-%{release}
 BuildArch: noarch
 %description %{p_inout_cellular}
@@ -233,7 +233,7 @@ BuildArch: noarch
 %package %{p_inout_mce}
 Summary: Statefs inout provider: mce properties
 Group: System Environment/Libraries
-Requires: statefs = %{statefs_ver}
+Requires: statefs >= %{statefs_ver}
 Provides: statefs-provider-mce = %{version}-%{release}
 BuildArch: noarch
 %description %{p_inout_mce}
@@ -242,7 +242,7 @@ BuildArch: noarch
 %package %{p_inout_profile}
 Summary: Statefs inout provider: profile information
 Group: System Environment/Libraries
-Requires: statefs = %{statefs_ver}
+Requires: statefs >= %{statefs_ver}
 Provides: statefs-provider-profile = %{version}-%{release}
 BuildArch: noarch
 %description %{p_inout_profile}
@@ -251,7 +251,7 @@ BuildArch: noarch
 %package %{p_inout_keyboard}
 Summary: Statefs inout provider: keyboard information
 Group: System Environment/Libraries
-Requires: statefs = %{statefs_ver}
+Requires: statefs >= %{statefs_ver}
 Provides: statefs-provider-keyboard = %{version}-%{release}
 BuildArch: noarch
 %description %{p_inout_keyboard}
@@ -260,7 +260,7 @@ BuildArch: noarch
 %package %{p_inout_location}
 Summary: Statefs inout provider: location information
 Group: System Environment/Libraries
-Requires: statefs = %{statefs_ver}
+Requires: statefs >= %{statefs_ver}
 Provides: statefs-provider-location = %{version}-%{release}
 BuildArch: noarch
 %description %{p_inout_location}
