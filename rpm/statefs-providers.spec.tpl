@@ -155,6 +155,7 @@ Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
 Requires: statefs-loader-qt5
 BuildRequires: pkgconfig(mce)
+Provides: statefs-provider-system = %{version}-%{release}
 Obsoletes: contextkit-maemo-mce <= %{maemo_ver}
 Provides: contextkit-maemo-mce = %{maemo_ver1}
 Obsoletes: contextkit-plugin-mce <= %{ckit_version}
@@ -234,7 +235,7 @@ BuildArch: noarch
 Summary: Statefs inout provider: mce properties
 Group: System Environment/Libraries
 Requires: statefs >= %{statefs_ver}
-Provides: statefs-provider-mce = %{version}-%{release}
+Provides: statefs-provider-system = %{version}-%{release}
 BuildArch: noarch
 %description %{p_inout_mce}
 %{summary}
