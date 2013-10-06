@@ -257,7 +257,7 @@ InternetNs::InternetNs(QDBusConnection &bus)
     : Namespace("Internet", std::unique_ptr<PropertiesSource>
                 (new Bridge(this, bus)))
     , defaults_({{"NetworkType", ""}
-            , {"NetworkState", "offline"}
+            , {"NetworkState", "disconnected"}
             , {"NetworkName", ""}
             //, {"TrafficIn", "0"}
             //, {"TrafficOut", "0"}
