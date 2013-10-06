@@ -160,32 +160,29 @@ Bridge::Status Bridge::process_service
     if (order > current_net_order_)
         return Ignore;
 
-    auto name = props["Name"].toString();
-    qDebug() << "Service " << name << " is online";
+    qDebug() << "Service " << props["Name"].toString() << " is online";
 
     current_net_order_ = order;
     current_service_ = path;
 
-    updateProperty("NetworkName", name);
-    updateProperty("SignalStrength", props["Strength"].toUInt());
-    auto state = state_map_[props["State"].toString()];
-    updateProperty("NetworkState", state);
-    auto net_type = net_type_map_[props["Type"].toString()];
-    updateProperty("NetworkType", net_type);
-
-    service_.reset(new Service(service_name, path, bus_));
-
     auto update = [this](QString const &n, QVariant const &v) {
-        if (n == "Name")
+        if (n == "Name") {
             updateProperty("NetworkName", v);
-        else if (n == "Strength")
+        } else if (n == "Strength") {
             updateProperty("SignalStrength", v.toUInt());
-        else if (n == "State") {
+        } else if (n == "State") {
             auto state = state_map_[v.toString()];
             if (state != "connected")
                 process_technologies();
+        } else if (n == "Type") {
+            updateProperty("NetworkType", net_type_map_[v.toString()]);
         }
     };
+
+    for (QString n : {"Name", "Strength", "State", "Type"})
+        update(n, props[n]);
+
+    service_.reset(new Service(service_name, path, bus_));
 
     connect(service_.get(), &Service::PropertyChanged
             , [update](QString const &n, QDBusVariant const&v) {
@@ -209,7 +206,6 @@ Bridge::Status Bridge::process_services()
     auto process = [this, &status]
         (PathPropertiesArray const &services) {
 
-        decltype(services.begin()) chosen;
         QString chosen_path;
         QVariantMap const *chosen_props;
         Order chosen_order = OrderEnd;
@@ -262,9 +258,7 @@ InternetNs::InternetNs(QDBusConnection &bus)
     , defaults_({{"NetworkType", ""}
             , {"NetworkState", "disconnected"}
             , {"NetworkName", ""}
-            //, {"TrafficIn", "0"}
-            //, {"TrafficOut", "0"}
-            , {"SignalStrength", "0"}})
+            , {"SignalStrength", "0"}
             , {"Tethering", "0"}})
 {
     addProperty("NetworkType", "");
