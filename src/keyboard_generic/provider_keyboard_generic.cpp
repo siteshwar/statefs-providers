@@ -24,7 +24,7 @@
 
 #include "provider_keyboard_generic.hpp"
 
-#include <cor/udev.hpp>
+#include <cor/udev/util.hpp>
 #include <linux/input.h>
 
 #include <QVector>
@@ -33,57 +33,7 @@
 
 namespace statefs { namespace keyboard {
 
-static bool is_keyboard_device(cor::udev::Device const &dev)
-{
-    QString key(dev.attr("capabilities/key"));
-    QStringList caps_strs(key.split(' ', QString::SkipEmptyParts));
-    if (caps_strs.isEmpty())
-        return false;
-    QVector<unsigned long> caps;
-    foreach(QString const &s, caps_strs) {
-        unsigned long v;
-        bool is_ok = false;
-        v = s.toULong(&is_ok, 16);
-        if (!is_ok)
-            return false;
-        caps.push_back(v);
-    }
-    size_t count = 0;
-    for (unsigned i = KEY_Q; i <= KEY_P; ++i) {
-        int pos = caps.size() - (i / sizeof(unsigned long));
-        if (pos < 0)
-            break;
-        size_t bit = i % sizeof(unsigned long);
-        if ((caps[pos] >> bit) & 1)
-            ++count;
-    }
-    return (count == KEY_P - KEY_Q);
-}
-
-static bool is_keyboard_available()
-{
-    using namespace cor::udev;
-    Root udev;
-    if (!udev)
-        return false;
-
-    Enumerate input(udev);
-    if (!input)
-        return false;
-
-    input.subsystem_add("input");
-    ListEntry devs(input);
-
-    bool is_kbd_found = false;
-    auto find_kbd = [&is_kbd_found, &udev](ListEntry const &e) -> bool {
-        Device d(udev, e.path());
-        is_kbd_found = is_keyboard_device(d);
-        return !is_kbd_found;
-    };
-    devs.for_each(find_kbd);
-    return is_kbd_found;
-}
-
+using cor::udevpp::is_keyboard_available;
 using statefs::qt::Namespace;
 using statefs::qt::PropertiesSource;
 
