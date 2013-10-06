@@ -1,3 +1,5 @@
+%{!?_with_qt5: %{!?_without_qt5: %define _with_qt5 --with-qt5}}
+
 %define ckit_version 0.7.41
 %define ckit_version1 0.7.42
 %define ckit_statefs_version 0.2.30
@@ -15,6 +17,7 @@ Release: 1
 License: LGPLv2
 Group: System Environment/Libraries
 URL: http://github.com/nemomobile/statefs-providers
+
 Source0: %{name}-%{version}.tar.bz2
 Source1: generate-spec.py
 Source2: inout-install.spec.tpl
@@ -27,15 +30,22 @@ Source8: statefs-providers.spec.tpl
 BuildRequires: cmake >= 2.8
 BuildRequires: statefs >= %{statefs_ver}
 BuildRequires: pkgconfig(statefs-cpp) >= %{statefs_ver}
-BuildRequires: pkgconfig(Qt5Core)
-BuildRequires: pkgconfig(Qt5DBus)
-BuildRequires: pkgconfig(cor) >= 0.1.8
+%if 0%{?_with_qt5:1}
+BuildRequires:pkgconfig(Qt5Core)
+BuildRequires:pkgconfig(Qt5DBus)
+%endif
+BuildRequires: pkgconfig(cor) >= 0.1.11
 
 %description
 %{summary}
 
+%if 0%{?_with_qt5:1}
 %define p_common -n statefs-provider-qt5
 %define n_common statefs-provider-qt5
+%else
+%define p_common -n statefs-providers
+%define n_common statefs-providers
+%endif
 
 %package %{p_common}
 Summary: Package to replace contextkit plugins
@@ -49,10 +59,11 @@ Obsoletes: contextkit-meego <= %{meego_ver}
 Provides: contextkit-meego = %{meego_ver1}
 Obsoletes: statefs-contextkit-provider <= %{ckit_statefs_version}
 Provides: statefs-contextkit-provider = %{ckit_statefs_version1}
-BuildRequires: pkgconfig(statefs-qt5) >= 0.2.33
+%{?_with_qt5:BuildRequires: pkgconfig(statefs-qt5) >= 0.2.33}
 %description %{p_common}
 %{summary}
 
+%if 0%{?_with_qt5:1}
 %package qt5-devel
 Summary: StateFS Qt5 library for providers, development files
 Group: Development/Libraries
@@ -68,6 +79,7 @@ Requires: statefs-providers-qt5 = %{version}-%{release}
 %define p_profile -n statefs-provider-profile
 %define p_keyboard_generic -n statefs-provider-keyboard-generic
 
+%endif
 %define p_inout_bluetooth -n statefs-provider-inout-bluetooth
 %define p_inout_power -n statefs-provider-inout-power
 %define p_inout_network -n statefs-provider-inout-network
@@ -76,6 +88,8 @@ Requires: statefs-providers-qt5 = %{version}-%{release}
 %define p_inout_profile -n statefs-provider-inout-profile
 %define p_inout_keyboard -n statefs-provider-inout-keyboard
 %define p_inout_location -n statefs-provider-inout-location
+
+%if 0%{?_with_qt5:1}
 
 %package %{p_bluez}
 Summary: BlueZ statefs provider
@@ -190,6 +204,7 @@ Provides: statefs-provider-keyboard = %{version}-%{release}
 %description %{p_keyboard_generic}
 %{summary}
 
+%endif
 # inout providers
 
 %package %{p_inout_bluetooth}
@@ -273,7 +288,7 @@ BuildArch: noarch
 
 
 %build
-%cmake -DSTATEFS_QT_VERSION=%{version}
+%cmake -DSTATEFS_QT_VERSION=%{version} %{?_with_multiarch:-DENABLE_MULTIARCH=ON} %{?_without_qt5:-DENABLE_QT5=OFF}
 make %{?jobs:-j%jobs}
 make doc
 pushd inout && %cmake && popd
@@ -284,31 +299,26 @@ rm -rf %{buildroot}
 make install DESTDIR=%{buildroot}
 pushd inout && make install DESTDIR=%{buildroot} && popd
 
+%if 0%{?_with_qt5:1}
 @@install-qt5@@
+%endif
 
 @@install-inout@@
 
 %clean
 rm -rf %{buildroot}
 
-%define register_system_provider() \
-%statefs_provider_register qt5 %{1} system \
-%statefs_provider_unregister qt5 %{1} user \
-%{nil}
-
-%define register_sys_inout_provider() \
-%statefs_provider_register inout inout_%{1} system \
-%statefs_provider_unregister inout inout_%{1} user \
-%{nil}
-
-
 %files %{p_common}
 %defattr(-,root,root,-)
 %doc README
+%if 0%{?_with_qt5:1}
 %{_libdir}/libstatefs-providers-qt5.so
+%endif
 
 %post %{p_common} -p /sbin/ldconfig
 %postun %{p_common} -p /sbin/ldconfig
+
+%if 0%{?_with_qt5:1}
 
 %files qt5-devel
 %defattr(-,root,root,-)
@@ -317,6 +327,8 @@ rm -rf %{buildroot}
 
 @@providers-qt5_system@@
 @@providers-qt5_user@@
+
+%endif
 
 @@providers-inout_system@@
 @@providers-inout_user@@
