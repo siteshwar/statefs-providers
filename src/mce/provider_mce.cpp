@@ -107,7 +107,7 @@ ScreenNs::ScreenNs()
     : Namespace("Screen")
 {
     auto d = statefs::Discrete("Blanked", "0");
-    auto prop = d.create();
+    auto prop = statefs::create(d);
     *this << prop;
     set_blanked_ = setter(prop);
 }

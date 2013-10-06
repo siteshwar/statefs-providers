@@ -38,6 +38,9 @@ void Namespace::setProperties(std::map<QString, QVariant> const &src)
 void Namespace::setProperties(DefaultProperties const &src)
 {
     for (auto const &nv : src) {
+        if (!nv.second)
+            continue;
+
         auto p = setters_for_props_.find(nv.first);
         if (p != setters_for_props_.end()) {
             auto set = p->second;
@@ -64,7 +67,7 @@ void Namespace::addProperty(char const *name
 {
     using statefs::Discrete;
     auto d = Discrete(name, def_val);
-    auto prop = d.create();
+    auto prop = statefs::create(d);
     *this << prop;
     setters_for_props_[src_name] = setter(prop);
 }
