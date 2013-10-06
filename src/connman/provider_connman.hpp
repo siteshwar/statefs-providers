@@ -63,6 +63,7 @@ private:
     std::unique_ptr<ServiceWatch> watch_;
     std::unique_ptr<Manager> manager_;
     std::unique_ptr<Service> service_;
+
     Order current_net_order_;
     QString current_technology_;
     QString current_service_;

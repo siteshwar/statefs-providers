@@ -247,8 +247,11 @@ Bridge::Status Bridge::process_technology(QString const &path
     qDebug() << "Technology (type=" << net_type << ") is online";
     updateProperty("NetworkType", net_type_map_[net_type]);
     updateProperty("NetworkState", "connected");
+    updateProperty("Tethering", props["Tethering"]);
+
     current_net_order_ = order;
     current_technology_ = path;
+
     auto status = process_services();
     return (order == WiFi || order == Cellular) ? status : Match;
 }
@@ -262,6 +265,7 @@ InternetNs::InternetNs(QDBusConnection &bus)
             //, {"TrafficIn", "0"}
             //, {"TrafficOut", "0"}
             , {"SignalStrength", "0"}})
+            , {"Tethering", "0"}})
 {
     addProperty("NetworkType", "");
     addProperty("NetworkState", "disconnected");
@@ -269,6 +273,7 @@ InternetNs::InternetNs(QDBusConnection &bus)
     addProperty("TrafficIn", "0");
     addProperty("TrafficOut", "0");
     addProperty("SignalStrength", "0");
+    addProperty("Tethering", "0");
     src_->init();
 }
 
