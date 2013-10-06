@@ -27,6 +27,9 @@ Source5: qt5-install.spec.tpl
 Source6: qt5_system-providers.spec.tpl
 Source7: qt5_user-providers.spec.tpl
 Source8: statefs-providers.spec.tpl
+Source9: default_system-providers.spec.tpl
+Source10: default-install.spec.tpl
+
 BuildRequires: cmake >= 2.8
 BuildRequires: statefs >= %{statefs_ver}
 BuildRequires: pkgconfig(statefs-cpp) >= %{statefs_ver}
@@ -80,6 +83,9 @@ Requires: statefs-providers-qt5 = %{version}-%{release}
 %define p_keyboard_generic -n statefs-provider-keyboard-generic
 
 %endif
+
+%define p_udev -n statefs-provider-udev
+
 %define p_inout_bluetooth -n statefs-provider-inout-bluetooth
 %define p_inout_power -n statefs-provider-inout-power
 %define p_inout_network -n statefs-provider-inout-network
@@ -205,6 +211,30 @@ Provides: statefs-provider-keyboard = %{version}-%{release}
 %{summary}
 
 %endif
+
+%package %{p_udev}
+Summary: Provider gathering different information from udev/sysfs
+Group: System Environment/Libraries
+BuildRequires: boost-filesystem >= 1.51.0
+BuildRequires: boost-devel >= 1.51.0
+BuildRequires: pkgconfig(cor-udev) >= 0.1.11
+Requires(post): /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
+Requires: %{n_common} = %{version}-%{release}
+BuildRequires: pkgconfig(statefs-util) >= %{statefs_ver}
+Obsoletes: statefs-provider-upower <= %{version}-%{release}
+Provides: statefs-provider-upower = %{version}-%{release}
+Obsoletes: contextkit-meego-battery-upower <= %{meego_ver}
+Provides: contextkit-meego-battery-upower = %{meego_ver1}
+Obsoletes: contextkit-plugin-upower <= %{ckit_version}
+Provides: contextkit-plugin-upower = %{ckit_version1}
+Obsoletes: contextkit-plugin-power <= %{ckit_version}
+Provides: contextkit-plugin-power = %{ckit_version1}
+Provides: statefs-provider-power = %{version}-%{release}
+%description %{p_udev}
+%{summary}
+
+
 # inout providers
 
 %package %{p_inout_bluetooth}
@@ -299,6 +329,8 @@ rm -rf %{buildroot}
 make install DESTDIR=%{buildroot}
 pushd inout && make install DESTDIR=%{buildroot} && popd
 
+@@install-default@@
+
 %if 0%{?_with_qt5:1}
 @@install-qt5@@
 %endif
@@ -329,6 +361,8 @@ rm -rf %{buildroot}
 @@providers-qt5_user@@
 
 %endif
+
+@@providers-default_system@@
 
 @@providers-inout_system@@
 @@providers-inout_user@@

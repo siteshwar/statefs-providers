@@ -79,5 +79,6 @@ add_subdirectory(src/keyboard_generic)
 endif()
 
 
+add_subdirectory(src/udev)
 add_subdirectory(tests)
 

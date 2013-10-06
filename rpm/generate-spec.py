@@ -10,6 +10,8 @@ class Actions:
                   , "keyboard_generic"]
     qt5_user = ["profile"]
 
+    default_system = ["udev"]
+
     old_names = { "keyboard_generic" : "keyboard-generic" }
 
     inout_system = ["bluetooth", "power", "network", "cellular", "mce"
@@ -44,8 +46,8 @@ class Actions:
             return self.replace__(''.join(f.readlines()), src, kind = kind)
 
     def install(self, name):
-        res = self.install__(name, "system")
-        res.extend(self.install__(name, "user"))
+        res = self.install__(name, "system") or []
+        res.extend(self.install__(name, "user") or [])
         return res
 
 def replaced(l):

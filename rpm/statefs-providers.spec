@@ -27,6 +27,9 @@ Source5: qt5-install.spec.tpl
 Source6: qt5_system-providers.spec.tpl
 Source7: qt5_user-providers.spec.tpl
 Source8: statefs-providers.spec.tpl
+Source9: default_system-providers.spec.tpl
+Source10: default-install.spec.tpl
+
 BuildRequires: cmake >= 2.8
 BuildRequires: statefs >= %{statefs_ver}
 BuildRequires: pkgconfig(statefs-cpp) >= %{statefs_ver}
@@ -80,6 +83,8 @@ Requires: statefs-providers-qt5 = %{version}-%{release}
 %define p_keyboard_generic -n statefs-provider-keyboard-generic
 
 %endif
+
+%define p_udev -n statefs-provider-udev
 
 %define p_inout_bluetooth -n statefs-provider-inout-bluetooth
 %define p_inout_power -n statefs-provider-inout-power
@@ -206,6 +211,30 @@ Provides: statefs-provider-keyboard = %{version}-%{release}
 %{summary}
 
 %endif
+
+%package %{p_udev}
+Summary: Provider gathering different information from udev/sysfs
+Group: System Environment/Libraries
+BuildRequires: boost-filesystem >= 1.51.0
+BuildRequires: boost-devel >= 1.51.0
+BuildRequires: pkgconfig(cor-udev) >= 0.1.11
+Requires(post): /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
+Requires: %{n_common} = %{version}-%{release}
+BuildRequires: pkgconfig(statefs-util) >= %{statefs_ver}
+Obsoletes: statefs-provider-upower <= %{version}-%{release}
+Provides: statefs-provider-upower = %{version}-%{release}
+Obsoletes: contextkit-meego-battery-upower <= %{meego_ver}
+Provides: contextkit-meego-battery-upower = %{meego_ver1}
+Obsoletes: contextkit-plugin-upower <= %{ckit_version}
+Provides: contextkit-plugin-upower = %{ckit_version1}
+Obsoletes: contextkit-plugin-power <= %{ckit_version}
+Provides: contextkit-plugin-power = %{ckit_version1}
+Provides: statefs-provider-power = %{version}-%{release}
+%description %{p_udev}
+%{summary}
+
+
 # inout providers
 
 %package %{p_inout_bluetooth}
@@ -299,6 +328,10 @@ pushd inout && %cmake && popd
 rm -rf %{buildroot}
 make install DESTDIR=%{buildroot}
 pushd inout && make install DESTDIR=%{buildroot} && popd
+
+%statefs_provider_install default udev %{_statefs_libdir}/libprovider-udev.so system
+
+
 
 %if 0%{?_with_qt5:1}
 %statefs_provider_install qt5 bluez %{_statefs_libdir}/libprovider-bluez.so system%statefs_provider_install qt5 upower %{_statefs_libdir}/libprovider-upower.so system%statefs_provider_install qt5 connman %{_statefs_libdir}/libprovider-connman.so system%statefs_provider_install qt5 ofono %{_statefs_libdir}/libprovider-ofono.so system%statefs_provider_install qt5 mce %{_statefs_libdir}/libprovider-mce.so system%statefs_provider_install qt5 keyboard_generic %{_statefs_libdir}/libprovider-keyboard_generic.so system
@@ -493,6 +526,31 @@ statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so
 
 
 %endif
+
+
+%files %{p_udev} -f udev.files
+%defattr(-,root,root,-)
+
+%pre %{p_udev}
+%statefs_pre || :
+
+%posttrans %{p_udev}
+%statefs_provider_register default udev system
+statefs unregister %{_statefs_libdir}/libprovider-udev.so
+%statefs_posttrans || :
+
+%post %{p_udev} -p /sbin/ldconfig
+
+%preun %{p_udev}
+%statefs_preun || :
+
+%postun %{p_udev}
+/sbin/ldconfig
+%statefs_provider_unregister default udev system
+%statefs_cleanup
+%statefs_postun || :
+
+
 
 
 %files %{p_inout_bluetooth} -f inout_bluetooth.files
