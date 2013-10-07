@@ -1,14 +1,9 @@
 PROJECT(statefs-providers)
 cmake_minimum_required(VERSION 2.8)
 
-option(ENABLE_QT5 "Build Qt5 providers" ON)
-
-if(ENABLE_QT5)
-  message(STATUS "Build Qt5 providers")
-  if(NOT DEFINED STATEFS_QT_VERSION)
-    message(FATAL_ERROR "Define STATEFS_QT_VERSION")
-  endif(NOT DEFINED STATEFS_QT_VERSION)
-endif(ENABLE_QT5)
+IF(NOT DEFINED STATEFS_QT_VERSION)
+MESSAGE(FATAL_ERROR "Define STATEFS_QT_VERSION")
+ENDIF(NOT DEFINED STATEFS_QT_VERSION)
 
 option(ENABLE_MULTIARCH "Enable support for multi-arch distros (lib64)" OFF)
 IF(ENABLE_MULTIARCH)
@@ -35,12 +30,13 @@ set(CMAKE_CXX_FLAGS
   "${CMAKE_CXX_FLAGS} -Wno-psabi"
 )
 
-find_package(Threads)
 pkg_check_modules(STATEFS statefs-cpp REQUIRED)
+pkg_check_modules(STATEFS_QT5 statefs-qt5 REQUIRED)
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${STATEFS_INCLUDES}
+  ${STATEFS_QT5_INCLUDES}
 )
 
 link_directories(
@@ -48,19 +44,9 @@ link_directories(
   ${STATEFS_QT5_LIBS}
 )
 
-if(ENABLE_QT5)
-
-pkg_check_modules(STATEFS_QT5 statefs-qt5 REQUIRED)
-
-include_directories(
-  ${STATEFS_QT5_INCLUDES}
-)
-
-link_directories(
-  ${STATEFS_QT5_LIBS}
-)
-
 install(DIRECTORY include/statefs DESTINATION include/qt5)
+
+find_package(Threads)
 
 find_package(Qt5Core REQUIRED)
 find_package(Qt5DBus REQUIRED)
@@ -75,10 +61,6 @@ add_subdirectory(src/ofono)
 add_subdirectory(src/mce)
 add_subdirectory(src/profile)
 add_subdirectory(src/keyboard_generic)
-
-endif()
-
-
 add_subdirectory(src/udev)
 add_subdirectory(tests)
 
