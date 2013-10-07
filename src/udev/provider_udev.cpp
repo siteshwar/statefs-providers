@@ -1,8 +1,8 @@
 #include <thread>
 #include <memory>
-#include <chrono>
 #include <array>
 #include <functional>
+#include <time.h>
 
 #include <boost/asio.hpp>
 #include <boost/asio/posix/basic_descriptor.hpp>
@@ -16,7 +16,6 @@
 
 namespace asio = boost::asio;
 namespace udevpp = cor::udevpp;
-namespace chrono = std::chrono;
 
 namespace statefs { namespace udev {
 
@@ -129,7 +128,7 @@ private:
 
 
 using statefs::consumer::try_open_in_property;
-using chrono::steady_clock;
+
 
 class Monitor;
 
@@ -184,7 +183,7 @@ private:
 
 class Monitor
 {
-    typedef chrono::time_point<steady_clock> time_type;
+    typedef time_t time_type;
 
     enum class Prop
     {
@@ -395,7 +394,7 @@ Monitor::Monitor(asio::io_service &io, BatteryNs *bat_ns)
         }())
     , blanked_stream_(io)
     , timer_(io)
-    , last_{steady_clock::now(), false, energy_full_, 0, 100, 36000, 0}
+    , last_{::time(nullptr), false, energy_full_, 0, 100, 36000, 0}
     , current_(last_)
     , denergy_(6, 10)
     {}
@@ -524,7 +523,7 @@ void Monitor::on_charger(udevpp::Device const &dev)
 
 void Monitor::on_battery(udevpp::Device const &dev)
 {
-    set<Prop::BatTime>(steady_clock::now());
+    set<Prop::BatTime>(::time(nullptr));
     set<Prop::EnergyNow>(attr<long>(dev.attr("energy_now")));
     set<Prop::Capacity>(attr<long>(dev.attr("capacity")));
 }
@@ -533,14 +532,14 @@ void Monitor::notify()
 {
     typedef BatteryNs::Prop P;
 
-    chrono::seconds dt{0};
+    time_type dt = 0;
     auto update_dt = [&dt](time_type const& tnow, time_type const& twas) {
-        dt = chrono::duration_cast<chrono::seconds>(tnow - twas);
+        dt = tnow - twas;
     };
 
     auto process_energy = [this, &dt](long enow, long ewas) {
         std::cerr << "Energy -> " << enow << std::endl;
-        auto sec = dt.count();
+        auto sec = dt;
         std::cerr << "DT:" << sec << std::endl;
         if (!sec)
             return;
