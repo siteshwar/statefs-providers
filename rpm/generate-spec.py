@@ -29,18 +29,13 @@ class Actions:
         return res.split("\n")
 
     def providers(self, name):
-        src = getattr(Actions, name, None)
-        if src is None:
-            print >>sys.stderr, "No src", name
-            return
+        src = getattr(Actions, name)
         with open(name + "-providers.spec.tpl") as f:
             return self.replace__(''.join(f.readlines()), src)
 
     def install__(self, name, kind):
-        member = '_'.join((name, kind))
-        src = getattr(Actions, member, None)
+        src = getattr(Actions, '_'.join((name, kind)), None)
         if src is None:
-            print >>sys.stderr, "No src", member
             return
         with open(name + "-install.spec.tpl") as f:
             return self.replace__(''.join(f.readlines()), src, kind = kind)
@@ -56,12 +51,7 @@ def replaced(l):
         return (l,)
     actions = Actions(l)
     (part, name) = m.group(1).split("-")
-    action = getattr(actions, part, None)
-    if action:
-        return getattr(actions, part)(name)
-    else:
-        print >>sys.stderr, "No action", part
-        return l
+    return getattr(actions, part)(name)
 
 Actions.inout_user = ["inout_" + a for a in Actions.inout_user]
 Actions.inout_system = ["inout_" + a for a in Actions.inout_system]
