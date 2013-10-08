@@ -205,8 +205,8 @@ Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
 BuildRequires: pkgconfig(statefs-util) >= %{statefs_ver}
-Obsoletes: statefs-provider-upower <= %{version}-%{release}
-Provides: statefs-provider-upower = %{version}-%{release}
+#Obsoletes: statefs-provider-upower <= %{version}-%{release}
+#Provides: statefs-provider-upower = %{version}-%{release}
 Obsoletes: contextkit-meego-battery-upower <= %{meego_ver}
 Provides: contextkit-meego-battery-upower = %{meego_ver1}
 Obsoletes: contextkit-plugin-upower <= %{ckit_version}
@@ -318,17 +318,6 @@ pushd inout && make install DESTDIR=%{buildroot} && popd
 
 %clean
 rm -rf %{buildroot}
-
-%define register_system_provider() \
-%statefs_provider_register qt5 %{1} system \
-%statefs_provider_unregister qt5 %{1} user \
-%{nil}
-
-%define register_sys_inout_provider() \
-%statefs_provider_register inout inout_%{1} system \
-%statefs_provider_unregister inout inout_%{1} user \
-%{nil}
-
 
 %files %{p_common}
 %defattr(-,root,root,-)

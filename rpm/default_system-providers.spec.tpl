@@ -3,21 +3,18 @@
 %defattr(-,root,root,-)
 
 %pre %{{p_{name}}}
-%statefs_pre || :
+%statefs_pre
 
-%posttrans %{{p_{name}}}
+%post %{{p_{name}}}
+/sbin/ldconfig
 %statefs_provider_register default {name} system
-statefs unregister %{{_statefs_libdir}}/libprovider-{old_name}.so
-%statefs_posttrans || :
-
-%post %{{p_{name}}} -p /sbin/ldconfig
+%statefs_post
 
 %preun %{{p_{name}}}
-%statefs_preun || :
+%statefs_preun
+%statefs_provider_unregister default {name} system
 
 %postun %{{p_{name}}}
 /sbin/ldconfig
-%statefs_provider_unregister default {name} system
-%statefs_cleanup
-%statefs_postun || :
+%statefs_postun
 

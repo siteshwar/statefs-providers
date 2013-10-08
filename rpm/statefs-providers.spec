@@ -205,8 +205,8 @@ Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
 BuildRequires: pkgconfig(statefs-util) >= %{statefs_ver}
-Obsoletes: statefs-provider-upower <= %{version}-%{release}
-Provides: statefs-provider-upower = %{version}-%{release}
+#Obsoletes: statefs-provider-upower <= %{version}-%{release}
+#Provides: statefs-provider-upower = %{version}-%{release}
 Obsoletes: contextkit-meego-battery-upower <= %{meego_ver}
 Provides: contextkit-meego-battery-upower = %{meego_ver1}
 Obsoletes: contextkit-plugin-upower <= %{ckit_version}
@@ -301,7 +301,7 @@ BuildArch: noarch
 
 
 %build
-%cmake -DSTATEFS_QT_VERSION=%{version}
+%cmake -DSTATEFS_QT_VERSION=%{version} %{?_with_multiarch:-DENABLE_MULTIARCH=ON}
 make %{?jobs:-j%jobs}
 make doc
 pushd inout && %cmake && popd
@@ -314,7 +314,14 @@ pushd inout && make install DESTDIR=%{buildroot} && popd
 
 %statefs_provider_install default udev %{_statefs_libdir}/libprovider-udev.so system
 
-%statefs_provider_install qt5 bluez %{_statefs_libdir}/libprovider-bluez.so system%statefs_provider_install qt5 upower %{_statefs_libdir}/libprovider-upower.so system%statefs_provider_install qt5 connman %{_statefs_libdir}/libprovider-connman.so system%statefs_provider_install qt5 ofono %{_statefs_libdir}/libprovider-ofono.so system%statefs_provider_install qt5 mce %{_statefs_libdir}/libprovider-mce.so system%statefs_provider_install qt5 keyboard_generic %{_statefs_libdir}/libprovider-keyboard_generic.so system
+
+%statefs_provider_install qt5 bluez %{_statefs_libdir}/libprovider-bluez.so system
+%statefs_provider_install qt5 upower %{_statefs_libdir}/libprovider-upower.so system
+%statefs_provider_install qt5 connman %{_statefs_libdir}/libprovider-connman.so system
+%statefs_provider_install qt5 ofono %{_statefs_libdir}/libprovider-ofono.so system
+%statefs_provider_install qt5 mce %{_statefs_libdir}/libprovider-mce.so system
+%statefs_provider_install qt5 keyboard_generic %{_statefs_libdir}/libprovider-keyboard_generic.so system
+
 %statefs_provider_install qt5 profile %{_statefs_libdir}/libprovider-profile.so user
 
 %statefs_provider_install inout inout_bluetooth %{_statefs_datadir}/inout_bluetooth.conf system
@@ -330,17 +337,6 @@ pushd inout && make install DESTDIR=%{buildroot} && popd
 
 %clean
 rm -rf %{buildroot}
-
-%define register_system_provider() \
-%statefs_provider_register qt5 %{1} system \
-%statefs_provider_unregister qt5 %{1} user \
-%{nil}
-
-%define register_sys_inout_provider() \
-%statefs_provider_register inout inout_%{1} system \
-%statefs_provider_unregister inout inout_%{1} user \
-%{nil}
-
 
 %files %{p_common}
 %defattr(-,root,root,-)
@@ -360,155 +356,141 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 
 %pre %{p_bluez}
-%statefs_pre || :
+%statefs_pre
+statefs unregister %{_statefs_libdir}/libprovider-bluez.so || :
 
-%posttrans %{p_bluez}
+%post %{p_bluez}
+/sbin/ldconfig
 %statefs_provider_register qt5 bluez system
-statefs unregister %{_statefs_libdir}/libprovider-bluez.so
-%statefs_posttrans || :
-
-%post %{p_bluez} -p /sbin/ldconfig
+%statefs_post
 
 %preun %{p_bluez}
-%statefs_preun || :
+%statefs_preun
+%statefs_provider_unregister qt5 bluez system
 
 %postun %{p_bluez}
 /sbin/ldconfig
-%statefs_provider_unregister qt5 bluez system
-%statefs_cleanup
-%statefs_postun || :
+%statefs_postun
 
 %files %{p_upower} -f upower.files
 %defattr(-,root,root,-)
 
 %pre %{p_upower}
-%statefs_pre || :
+%statefs_pre
+statefs unregister %{_statefs_libdir}/libprovider-upower.so || :
 
-%posttrans %{p_upower}
+%post %{p_upower}
+/sbin/ldconfig
 %statefs_provider_register qt5 upower system
-statefs unregister %{_statefs_libdir}/libprovider-upower.so
-%statefs_posttrans || :
-
-%post %{p_upower} -p /sbin/ldconfig
+%statefs_post
 
 %preun %{p_upower}
-%statefs_preun || :
+%statefs_preun
+%statefs_provider_unregister qt5 upower system
 
 %postun %{p_upower}
 /sbin/ldconfig
-%statefs_provider_unregister qt5 upower system
-%statefs_cleanup
-%statefs_postun || :
+%statefs_postun
 
 %files %{p_connman} -f connman.files
 %defattr(-,root,root,-)
 
 %pre %{p_connman}
-%statefs_pre || :
+%statefs_pre
+statefs unregister %{_statefs_libdir}/libprovider-connman.so || :
 
-%posttrans %{p_connman}
+%post %{p_connman}
+/sbin/ldconfig
 %statefs_provider_register qt5 connman system
-statefs unregister %{_statefs_libdir}/libprovider-connman.so
-%statefs_posttrans || :
-
-%post %{p_connman} -p /sbin/ldconfig
+%statefs_post
 
 %preun %{p_connman}
-%statefs_preun || :
+%statefs_preun
+%statefs_provider_unregister qt5 connman system
 
 %postun %{p_connman}
 /sbin/ldconfig
-%statefs_provider_unregister qt5 connman system
-%statefs_cleanup
-%statefs_postun || :
+%statefs_postun
 
 %files %{p_ofono} -f ofono.files
 %defattr(-,root,root,-)
 
 %pre %{p_ofono}
-%statefs_pre || :
+%statefs_pre
+statefs unregister %{_statefs_libdir}/libprovider-ofono.so || :
 
-%posttrans %{p_ofono}
+%post %{p_ofono}
+/sbin/ldconfig
 %statefs_provider_register qt5 ofono system
-statefs unregister %{_statefs_libdir}/libprovider-ofono.so
-%statefs_posttrans || :
-
-%post %{p_ofono} -p /sbin/ldconfig
+%statefs_post
 
 %preun %{p_ofono}
-%statefs_preun || :
+%statefs_preun
+%statefs_provider_unregister qt5 ofono system
 
 %postun %{p_ofono}
 /sbin/ldconfig
-%statefs_provider_unregister qt5 ofono system
-%statefs_cleanup
-%statefs_postun || :
+%statefs_postun
 
 %files %{p_mce} -f mce.files
 %defattr(-,root,root,-)
 
 %pre %{p_mce}
-%statefs_pre || :
+%statefs_pre
+statefs unregister %{_statefs_libdir}/libprovider-mce.so || :
 
-%posttrans %{p_mce}
+%post %{p_mce}
+/sbin/ldconfig
 %statefs_provider_register qt5 mce system
-statefs unregister %{_statefs_libdir}/libprovider-mce.so
-%statefs_posttrans || :
-
-%post %{p_mce} -p /sbin/ldconfig
+%statefs_post
 
 %preun %{p_mce}
-%statefs_preun || :
+%statefs_preun
+%statefs_provider_unregister qt5 mce system
 
 %postun %{p_mce}
 /sbin/ldconfig
-%statefs_provider_unregister qt5 mce system
-%statefs_cleanup
-%statefs_postun || :
+%statefs_postun
 
 %files %{p_keyboard_generic} -f keyboard_generic.files
 %defattr(-,root,root,-)
 
 %pre %{p_keyboard_generic}
-%statefs_pre || :
+%statefs_pre
+statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so || :
 
-%posttrans %{p_keyboard_generic}
+%post %{p_keyboard_generic}
+/sbin/ldconfig
 %statefs_provider_register qt5 keyboard_generic system
-statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so
-%statefs_posttrans || :
-
-%post %{p_keyboard_generic} -p /sbin/ldconfig
+%statefs_post
 
 %preun %{p_keyboard_generic}
-%statefs_preun || :
+%statefs_preun
+%statefs_provider_unregister qt5 keyboard_generic system
 
 %postun %{p_keyboard_generic}
 /sbin/ldconfig
-%statefs_provider_unregister qt5 keyboard_generic system
-%statefs_cleanup
-%statefs_postun || :
+%statefs_postun
 
 
 %files %{p_profile} -f profile.files
 %defattr(-,root,root,-)
 
 %pre %{p_profile}
-%statefs_pre || :
+%statefs_pre
 
-%posttrans %{p_profile}
+%post %{p_profile}
+/sbin/ldconfig
 %statefs_provider_register qt5 profile
-%statefs_posttrans || :
-
-%post %{p_profile} -p /sbin/ldconfig
+%statefs_post
 
 %preun %{p_profile}
-%statefs_preun || :
+%statefs_preun
+%statefs_provider_unregister qt5 profile
 
 %postun %{p_profile}
 /sbin/ldconfig
-%statefs_provider_unregister qt5 profile
-%statefs_cleanup
-%statefs_postun || :
+%statefs_postun
 
 
 
@@ -516,23 +498,20 @@ statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so
 %defattr(-,root,root,-)
 
 %pre %{p_udev}
-%statefs_pre || :
+%statefs_pre
 
-%posttrans %{p_udev}
+%post %{p_udev}
+/sbin/ldconfig
 %statefs_provider_register default udev system
-statefs unregister %{_statefs_libdir}/libprovider-udev.so
-%statefs_posttrans || :
-
-%post %{p_udev} -p /sbin/ldconfig
+%statefs_post
 
 %preun %{p_udev}
-%statefs_preun || :
+%statefs_preun
+%statefs_provider_unregister default udev system
 
 %postun %{p_udev}
 /sbin/ldconfig
-%statefs_provider_unregister default udev system
-%statefs_cleanup
-%statefs_postun || :
+%statefs_postun
 
 
 
@@ -541,176 +520,143 @@ statefs unregister %{_statefs_libdir}/libprovider-udev.so
 %defattr(-,root,root,-)
 
 %pre %{p_inout_bluetooth}
-%statefs_pre || :
+%statefs_pre
 
-%posttrans %{p_inout_bluetooth}
+%post %{p_inout_bluetooth}
+%{_statefs_libdir}/provider-do unregister inout inout_bluetooth
 %statefs_provider_register inout inout_bluetooth system
-%statefs_provider_unregister inout inout_bluetooth user
-%statefs_posttrans || :
-
-%post %{p_inout_bluetooth} -p /sbin/ldconfig
+%statefs_post
 
 %preun %{p_inout_bluetooth}
-%statefs_preun || :
+%statefs_preun
+%statefs_provider_unregister inout inout_bluetooth
 
 %postun %{p_inout_bluetooth}
-/sbin/ldconfig
-%statefs_provider_unregister inout inout_bluetooth system
-%statefs_cleanup
-%statefs_postun || :
+%statefs_postun
 
 %files %{p_inout_power} -f inout_power.files
 %defattr(-,root,root,-)
 
 %pre %{p_inout_power}
-%statefs_pre || :
+%statefs_pre
 
-%posttrans %{p_inout_power}
+%post %{p_inout_power}
+%{_statefs_libdir}/provider-do unregister inout inout_power
 %statefs_provider_register inout inout_power system
-%statefs_provider_unregister inout inout_power user
-%statefs_posttrans || :
-
-%post %{p_inout_power} -p /sbin/ldconfig
+%statefs_post
 
 %preun %{p_inout_power}
-%statefs_preun || :
+%statefs_preun
+%statefs_provider_unregister inout inout_power
 
 %postun %{p_inout_power}
-/sbin/ldconfig
-%statefs_provider_unregister inout inout_power system
-%statefs_cleanup
-%statefs_postun || :
+%statefs_postun
 
 %files %{p_inout_network} -f inout_network.files
 %defattr(-,root,root,-)
 
 %pre %{p_inout_network}
-%statefs_pre || :
+%statefs_pre
 
-%posttrans %{p_inout_network}
+%post %{p_inout_network}
+%{_statefs_libdir}/provider-do unregister inout inout_network
 %statefs_provider_register inout inout_network system
-%statefs_provider_unregister inout inout_network user
-%statefs_posttrans || :
-
-%post %{p_inout_network} -p /sbin/ldconfig
+%statefs_post
 
 %preun %{p_inout_network}
-%statefs_preun || :
+%statefs_preun
+%statefs_provider_unregister inout inout_network
 
 %postun %{p_inout_network}
-/sbin/ldconfig
-%statefs_provider_unregister inout inout_network system
-%statefs_cleanup
-%statefs_postun || :
+%statefs_postun
 
 %files %{p_inout_cellular} -f inout_cellular.files
 %defattr(-,root,root,-)
 
 %pre %{p_inout_cellular}
-%statefs_pre || :
+%statefs_pre
 
-%posttrans %{p_inout_cellular}
+%post %{p_inout_cellular}
+%{_statefs_libdir}/provider-do unregister inout inout_cellular
 %statefs_provider_register inout inout_cellular system
-%statefs_provider_unregister inout inout_cellular user
-%statefs_posttrans || :
-
-%post %{p_inout_cellular} -p /sbin/ldconfig
+%statefs_post
 
 %preun %{p_inout_cellular}
-%statefs_preun || :
+%statefs_preun
+%statefs_provider_unregister inout inout_cellular
 
 %postun %{p_inout_cellular}
-/sbin/ldconfig
-%statefs_provider_unregister inout inout_cellular system
-%statefs_cleanup
-%statefs_postun || :
+%statefs_postun
 
 %files %{p_inout_mce} -f inout_mce.files
 %defattr(-,root,root,-)
 
 %pre %{p_inout_mce}
-%statefs_pre || :
+%statefs_pre
 
-%posttrans %{p_inout_mce}
+%post %{p_inout_mce}
+%{_statefs_libdir}/provider-do unregister inout inout_mce
 %statefs_provider_register inout inout_mce system
-%statefs_provider_unregister inout inout_mce user
-%statefs_posttrans || :
-
-%post %{p_inout_mce} -p /sbin/ldconfig
+%statefs_post
 
 %preun %{p_inout_mce}
-%statefs_preun || :
+%statefs_preun
+%statefs_provider_unregister inout inout_mce
 
 %postun %{p_inout_mce}
-/sbin/ldconfig
-%statefs_provider_unregister inout inout_mce system
-%statefs_cleanup
-%statefs_postun || :
+%statefs_postun
 
 %files %{p_inout_keyboard} -f inout_keyboard.files
 %defattr(-,root,root,-)
 
 %pre %{p_inout_keyboard}
-%statefs_pre || :
+%statefs_pre
 
-%posttrans %{p_inout_keyboard}
+%post %{p_inout_keyboard}
+%{_statefs_libdir}/provider-do unregister inout inout_keyboard
 %statefs_provider_register inout inout_keyboard system
-%statefs_provider_unregister inout inout_keyboard user
-%statefs_posttrans || :
-
-%post %{p_inout_keyboard} -p /sbin/ldconfig
+%statefs_post
 
 %preun %{p_inout_keyboard}
-%statefs_preun || :
+%statefs_preun
+%statefs_provider_unregister inout inout_keyboard
 
 %postun %{p_inout_keyboard}
-/sbin/ldconfig
-%statefs_provider_unregister inout inout_keyboard system
-%statefs_cleanup
-%statefs_postun || :
+%statefs_postun
 
 %files %{p_inout_location} -f inout_location.files
 %defattr(-,root,root,-)
 
 %pre %{p_inout_location}
-%statefs_pre || :
+%statefs_pre
 
-%posttrans %{p_inout_location}
+%post %{p_inout_location}
+%{_statefs_libdir}/provider-do unregister inout inout_location
 %statefs_provider_register inout inout_location system
-%statefs_provider_unregister inout inout_location user
-%statefs_posttrans || :
-
-%post %{p_inout_location} -p /sbin/ldconfig
+%statefs_post
 
 %preun %{p_inout_location}
-%statefs_preun || :
+%statefs_preun
+%statefs_provider_unregister inout inout_location
 
 %postun %{p_inout_location}
-/sbin/ldconfig
-%statefs_provider_unregister inout inout_location system
-%statefs_cleanup
-%statefs_postun || :
+%statefs_postun
 
 
 %files %{p_inout_profile} -f inout_profile.files
 %defattr(-,root,root,-)
 
 %pre %{p_inout_profile}
-%statefs_pre || :
+%statefs_pre
 
-%posttrans %{p_inout_profile}
+%post %{p_inout_profile}
 %statefs_provider_register inout inout_profile system
-%statefs_provider_unregister inout inout_profile user
-%statefs_posttrans || :
-
-%post %{p_inout_profile} -p /sbin/ldconfig
+%statefs_post
 
 %preun %{p_inout_profile}
-%statefs_preun || :
+%statefs_preun
+%statefs_provider_unregister inout inout_profile user
 
 %postun %{p_inout_profile}
-/sbin/ldconfig
-%statefs_provider_unregister inout inout_profile system
-%statefs_cleanup
-%statefs_postun || :
+%statefs_postun
 
