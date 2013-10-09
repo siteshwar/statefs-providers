@@ -119,7 +119,7 @@ void Bridge::init_manager()
     };
 
     qDebug() << "Enumerating upower devices";
-    sync(manager_->EnumerateDevices(), find_battery);
+    async(this, manager_->EnumerateDevices(), find_battery);
     connect(manager_.get(), &Manager::Changed
             , this, &Bridge::update_all_props);
     using namespace std::placeholders;
