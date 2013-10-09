@@ -21,15 +21,9 @@ QDBusPendingReply<T> sync(QDBusPendingReply<T> &&reply)
     return reply;
 }
 
-template <typename T, typename OnValue>
-bool sync(QDBusPendingReply<T> reply, OnValue on_value)
+template <typename OnValue, typename T>
+bool callback_or_error(QDBusPendingReply<T> const &reply, OnValue on_value)
 {
-    QDBusPendingCallWatcher watcher(reply);
-    watcher.waitForFinished();
-    if (!watcher.isFinished()) {
-        qWarning() << "D-Bus request is not executed";
-        return false;
-    }
     if (reply.isError()) {
         auto err = reply.error();
         qWarning() << "D-Bus request error " << err.name()
@@ -39,6 +33,30 @@ bool sync(QDBusPendingReply<T> reply, OnValue on_value)
 
     on_value(reply.value());
     return true;
+}
+
+template <typename OnValue, typename T>
+void async(QObject *parent, QDBusPendingReply<T> &&reply, OnValue on_value)
+{
+    auto watcher = new QDBusPendingCallWatcher(reply, parent);
+    parent->connect(watcher, &QDBusPendingCallWatcher::finished
+                  , [on_value](QDBusPendingCallWatcher *w) {
+                        QDBusPendingReply<T> reply = *w;
+                        callback_or_error(reply, on_value);
+                        w->deleteLater();
+                    });
+}
+
+template <typename OnValue, typename T>
+bool sync(QDBusPendingReply<T> reply, OnValue on_value)
+{
+    QDBusPendingCallWatcher watcher(reply);
+    watcher.waitForFinished();
+    if (!watcher.isFinished()) {
+        qWarning() << "D-Bus request is not executed";
+        return false;
+    }
+    return callback_or_error(reply, on_value);
 }
 
 template <size_t Pos, typename T>
