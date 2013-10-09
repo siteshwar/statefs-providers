@@ -82,23 +82,30 @@ Requires: statefs-providers-qt5 = %{version}-%{release}
 %define p_inout_keyboard -n statefs-provider-inout-keyboard
 %define p_inout_location -n statefs-provider-inout-location
 
-%package %{p_bluez}
-Summary: BlueZ statefs provider
+
+%package -n statefs-provider-bluez
+Summary: Statefs provider, source - bluez
 Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
 Requires: statefs-loader-qt5
+Requires: bluez-libs >= 4.0
+Obsoletes: contextkit-meego-bluetooth <= %{meego_ver}
+Provides: contextkit-meego-bluetooth = %{meego_ver1}
 Obsoletes: contextkit-plugin-bluez <= %{ckit_version}
 Provides: contextkit-plugin-bluez = %{ckit_version1}
 Obsoletes: contextkit-plugin-bluetooth <= %{ckit_version}
 Provides: contextkit-plugin-bluetooth = %{ckit_version1}
 Provides: statefs-provider-bluetooth = %{version}-%{release}
-%description %{p_bluez}
+Conflicts: statefs-provider-inout-bluetooth
+%description -n statefs-provider-bluez
 %{summary}
 
-%package %{p_upower}
-Summary: Upower statefs provider
+
+
+%package -n statefs-provider-upower
+Summary: Statefs provider, source - upower
 Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
@@ -107,16 +114,20 @@ Requires: statefs-loader-qt5
 Requires: upower >= 0.9.18
 Obsoletes: contextkit-meego-battery-upower <= %{meego_ver}
 Provides: contextkit-meego-battery-upower = %{meego_ver1}
-Obsoletes: contextkit-plugin-upower <= %{ckit_version}
-Provides: contextkit-plugin-upower = %{ckit_version1}
 Obsoletes: contextkit-plugin-power <= %{ckit_version}
 Provides: contextkit-plugin-power = %{ckit_version1}
+Obsoletes: contextkit-plugin-upower <= %{ckit_version}
+Provides: contextkit-plugin-upower = %{ckit_version1}
 Provides: statefs-provider-power = %{version}-%{release}
-%description %{p_upower}
+Conflicts: statefs-provider-udev
+Conflicts: statefs-provider-inout-power
+%description -n statefs-provider-upower
 %{summary}
 
-%package %{p_connman}
-Summary: ConnMan statefs provider
+
+
+%package -n statefs-provider-connman
+Summary: Statefs provider, source - connman
 Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
@@ -129,11 +140,14 @@ Obsoletes: contextkit-plugin-connman <= %{ckit_version}
 Provides: contextkit-plugin-connman = %{ckit_version1}
 Provides: statefs-provider-internet = %{version}-%{release}
 Provides: statefs-provider-network = %{version}-%{release}
-%description %{p_connman}
+Conflicts: statefs-provider-inout-network
+%description -n statefs-provider-connman
 %{summary}
 
-%package %{p_ofono}
-Summary: oFono statefs provider
+
+
+%package -n statefs-provider-ofono
+Summary: Statefs provider, source - ofono
 Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
@@ -149,27 +163,50 @@ Provides: contextkit-plugin-cellular = %{ckit_version1}
 Obsoletes: contextkit-plugin-ofono <= %{ckit_version}
 Provides: contextkit-plugin-ofono = %{ckit_version1}
 Provides: statefs-provider-cellular = %{version}-%{release}
-%description %{p_ofono}
+Conflicts: statefs-provider-inout-cellular
+%description -n statefs-provider-ofono
 %{summary}
 
-%package %{p_mce}
-Summary: MCE statefs provider
+
+
+%package -n statefs-provider-mce
+Summary: Statefs provider, source - mce
 Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
 Requires: statefs-loader-qt5
 BuildRequires: pkgconfig(mce)
-Provides: statefs-provider-system = %{version}-%{release}
 Obsoletes: contextkit-maemo-mce <= %{maemo_ver}
 Provides: contextkit-maemo-mce = %{maemo_ver1}
 Obsoletes: contextkit-plugin-mce <= %{ckit_version}
 Provides: contextkit-plugin-mce = %{ckit_version1}
-%description %{p_mce}
+Provides: statefs-provider-system = %{version}-%{release}
+Conflicts: statefs-provider-inout-mce
+%description -n statefs-provider-mce
 %{summary}
 
-%package %{p_profile}
-Summary: Profiled statefs provider
+
+
+%package -n statefs-provider-keyboard-generic
+Summary: Statefs provider, source - sysfs/udev
+Group: System Environment/Libraries
+Requires(post): /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
+Requires: %{n_common} = %{version}-%{release}
+Requires: statefs-loader-qt5
+BuildRequires: pkgconfig(cor-udev) >= 0.1.11
+Obsoletes: contextkit-plugin-keyboard-generic <= %{ckit_version}
+Provides: contextkit-plugin-keyboard-generic = %{ckit_version1}
+Provides: statefs-provider-keyboard = %{version}-%{release}
+Conflicts: statefs-provider-inout-keyboard
+%description -n statefs-provider-keyboard-generic
+%{summary}
+
+
+
+%package -n statefs-provider-profile
+Summary: Statefs provider, source - profiled
 Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
@@ -178,121 +215,174 @@ Requires: statefs-loader-qt5
 Requires: profiled >= 0.30
 Obsoletes: contextkit-plugin-profile <= %{ckit_version}
 Provides: contextkit-plugin-profile = %{ckit_version1}
-%description %{p_profile}
+Provides: statefs-provider-profile = %{version}-%{release}
+Conflicts: statefs-provider-inout-profile
+%description -n statefs-provider-profile
 %{summary}
 
-%package %{p_keyboard_generic}
-Summary: Generic keyboard statefs provider
+
+
+%package -n statefs-provider-udev
+Summary: Statefs provider, source - sysfs/udev
 Group: System Environment/Libraries
-BuildRequires: pkgconfig(udev) >= 187
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
-Requires: statefs-loader-qt5
-Obsoletes: contextkit-plugin-keyboard-generic <= %{ckit_version}
-Provides: contextkit-plugin-keyboard-generic = %{ckit_version1}
-Provides: statefs-provider-keyboard = %{version}-%{release}
-%description %{p_keyboard_generic}
-%{summary}
-
-%package %{p_udev}
-Summary: Provider gathering different information from udev/sysfs
-Group: System Environment/Libraries
 BuildRequires: boost-filesystem >= 1.51.0
 BuildRequires: boost-devel >= 1.51.0
 BuildRequires: pkgconfig(cor-udev) >= 0.1.11
-Requires(post): /sbin/ldconfig
-Requires(postun): /sbin/ldconfig
-Requires: %{n_common} = %{version}-%{release}
 BuildRequires: pkgconfig(statefs-util) >= %{statefs_ver}
-#Obsoletes: statefs-provider-upower <= %{version}-%{release}
-#Provides: statefs-provider-upower = %{version}-%{release}
 Obsoletes: contextkit-meego-battery-upower <= %{meego_ver}
 Provides: contextkit-meego-battery-upower = %{meego_ver1}
-Obsoletes: contextkit-plugin-upower <= %{ckit_version}
-Provides: contextkit-plugin-upower = %{ckit_version1}
 Obsoletes: contextkit-plugin-power <= %{ckit_version}
 Provides: contextkit-plugin-power = %{ckit_version1}
+Obsoletes: contextkit-plugin-upower <= %{ckit_version}
+Provides: contextkit-plugin-upower = %{ckit_version1}
 Provides: statefs-provider-power = %{version}-%{release}
-%description %{p_udev}
+Conflicts: statefs-provider-upower
+Conflicts: statefs-provider-inout-power
+%description -n statefs-provider-udev
 %{summary}
 
 
-# inout providers
 
-%package %{p_inout_bluetooth}
+%package -n statefs-provider-inout-bluetooth
 Summary: Statefs inout provider: bluetooth properties
 Group: System Environment/Libraries
 Requires: statefs >= %{statefs_ver}
+
+Obsoletes: contextkit-meego-bluetooth <= %{meego_ver}
+Provides: contextkit-meego-bluetooth = %{meego_ver1}
+Obsoletes: contextkit-plugin-bluez <= %{ckit_version}
+Provides: contextkit-plugin-bluez = %{ckit_version1}
+Obsoletes: contextkit-plugin-bluetooth <= %{ckit_version}
+Provides: contextkit-plugin-bluetooth = %{ckit_version1}
 Provides: statefs-provider-bluetooth = %{version}-%{release}
+Conflicts: statefs-provider-bluez
 BuildArch: noarch
-%description %{p_inout_bluetooth}
+%description -n statefs-provider-inout-bluetooth
 %{summary}
 
-%package %{p_inout_power}
-Summary: Statefs inout provider: power subsystem properties
+
+%package -n statefs-provider-inout-power
+Summary: Statefs inout provider: power properties
 Group: System Environment/Libraries
 Requires: statefs >= %{statefs_ver}
+
+Obsoletes: contextkit-meego-battery-upower <= %{meego_ver}
+Provides: contextkit-meego-battery-upower = %{meego_ver1}
+Obsoletes: contextkit-plugin-power <= %{ckit_version}
+Provides: contextkit-plugin-power = %{ckit_version1}
+Obsoletes: contextkit-plugin-upower <= %{ckit_version}
+Provides: contextkit-plugin-upower = %{ckit_version1}
 Provides: statefs-provider-power = %{version}-%{release}
-Provides: statefs-provider-power-emu = 0.3.13
-Obsoletes: statefs-provider-power-emu < 0.3.13
+Conflicts: statefs-provider-upower
+Conflicts: statefs-provider-udev
 BuildArch: noarch
-%description %{p_inout_power}
+%description -n statefs-provider-inout-power
 %{summary}
 
-%package %{p_inout_network}
+
+%package -n statefs-provider-inout-network
 Summary: Statefs inout provider: network properties
 Group: System Environment/Libraries
 Requires: statefs >= %{statefs_ver}
+
+Obsoletes: contextkit-meego-internet <= %{meego_ver}
+Provides: contextkit-meego-internet = %{meego_ver1}
+Obsoletes: contextkit-plugin-connman <= %{ckit_version}
+Provides: contextkit-plugin-connman = %{ckit_version1}
 Provides: statefs-provider-internet = %{version}-%{release}
 Provides: statefs-provider-network = %{version}-%{release}
+Conflicts: statefs-provider-connman
 BuildArch: noarch
-%description %{p_inout_network}
+%description -n statefs-provider-inout-network
 %{summary}
 
-%package %{p_inout_cellular}
-Summary: Statefs inout provider: cellular network properties
+
+%package -n statefs-provider-inout-cellular
+Summary: Statefs inout provider: cellular properties
 Group: System Environment/Libraries
 Requires: statefs >= %{statefs_ver}
+
+Obsoletes: contextkit-meego-cellular <= %{meego_ver}
+Provides: contextkit-meego-cellular = %{meego_ver1}
+Obsoletes: contextkit-meego-phone <= %{meego_ver}
+Provides: contextkit-meego-phone = %{meego_ver1}
+Obsoletes: contextkit-plugin-cellular <= %{ckit_version}
+Provides: contextkit-plugin-cellular = %{ckit_version1}
+Obsoletes: contextkit-plugin-ofono <= %{ckit_version}
+Provides: contextkit-plugin-ofono = %{ckit_version1}
 Provides: statefs-provider-cellular = %{version}-%{release}
+Conflicts: statefs-provider-ofono
 BuildArch: noarch
-%description %{p_inout_cellular}
+%description -n statefs-provider-inout-cellular
 %{summary}
 
-%package %{p_inout_mce}
-Summary: Statefs inout provider: mce properties
+
+%package -n statefs-provider-inout-mce
+Summary: Statefs inout provider: system properties
 Group: System Environment/Libraries
 Requires: statefs >= %{statefs_ver}
+
+Obsoletes: contextkit-maemo-mce <= %{maemo_ver}
+Provides: contextkit-maemo-mce = %{maemo_ver1}
+Obsoletes: contextkit-plugin-mce <= %{ckit_version}
+Provides: contextkit-plugin-mce = %{ckit_version1}
 Provides: statefs-provider-system = %{version}-%{release}
+Conflicts: statefs-provider-mce
 BuildArch: noarch
-%description %{p_inout_mce}
+%description -n statefs-provider-inout-mce
 %{summary}
 
-%package %{p_inout_profile}
-Summary: Statefs inout provider: profile information
-Group: System Environment/Libraries
-Requires: statefs >= %{statefs_ver}
-Provides: statefs-provider-profile = %{version}-%{release}
-BuildArch: noarch
-%description %{p_inout_profile}
-%{summary}
 
-%package %{p_inout_keyboard}
-Summary: Statefs inout provider: keyboard information
+%package -n statefs-provider-inout-keyboard
+Summary: Statefs inout provider: keyboard properties
 Group: System Environment/Libraries
 Requires: statefs >= %{statefs_ver}
+
+Obsoletes: contextkit-plugin-keyboard-generic <= %{ckit_version}
+Provides: contextkit-plugin-keyboard-generic = %{ckit_version1}
 Provides: statefs-provider-keyboard = %{version}-%{release}
+Conflicts: statefs-provider-keyboard-generic
 BuildArch: noarch
-%description %{p_inout_keyboard}
+%description -n statefs-provider-inout-keyboard
 %{summary}
 
-%package %{p_inout_location}
-Summary: Statefs inout provider: location information
+
+%package -n statefs-provider-inout-location
+Summary: Statefs inout provider: location properties
 Group: System Environment/Libraries
 Requires: statefs >= %{statefs_ver}
+
+Obsoletes: contextkit-meego-location-geoclue <= %{meego_ver}
+Provides: contextkit-meego-location-geoclue = %{meego_ver1}
+Obsoletes: contextkit-meego-location-skyhook <= %{meego_ver}
+Provides: contextkit-meego-location-skyhook = %{meego_ver1}
+Obsoletes: contextkit-plugin-location-gypsy <= %{ckit_version}
+Provides: contextkit-plugin-location-gypsy = %{ckit_version1}
+Obsoletes: contextkit-plugin-location-skyhook <= %{ckit_version}
+Provides: contextkit-plugin-location-skyhook = %{ckit_version1}
+Obsoletes: contextkit-plugin-location <= %{ckit_version}
+Provides: contextkit-plugin-location = %{ckit_version1}
 Provides: statefs-provider-location = %{version}-%{release}
+Conflicts: statefs-provider-geoclue
 BuildArch: noarch
-%description %{p_inout_location}
+%description -n statefs-provider-inout-location
+%{summary}
+
+
+%package -n statefs-provider-inout-profile
+Summary: Statefs inout provider: profile properties
+Group: System Environment/Libraries
+Requires: statefs >= %{statefs_ver}
+
+Obsoletes: contextkit-plugin-profile <= %{ckit_version}
+Provides: contextkit-plugin-profile = %{ckit_version1}
+Provides: statefs-provider-profile = %{version}-%{release}
+Conflicts: statefs-provider-profile
+BuildArch: noarch
+%description -n statefs-provider-inout-profile
 %{summary}
 
 
