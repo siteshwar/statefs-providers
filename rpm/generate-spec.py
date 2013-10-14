@@ -11,7 +11,7 @@ Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires: %{{n_common}} = %{{version}}-%{{release}}
-Requires: statefs-loader-qt5
+Requires: statefs-loader-qt5 >= 0.0.9
 {extra}
 {obsoletes}
 {provides}

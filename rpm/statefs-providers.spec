@@ -6,7 +6,7 @@
 %define maemo_ver1 0.7.31
 %define meego_ver 0.1.0
 %define meego_ver1 0.1.0.1
-%define statefs_ver 0.3.17
+%define statefs_ver 0.3.19
 
 Summary: Statefs providers
 Name: statefs-providers
@@ -89,7 +89,7 @@ Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
-Requires: statefs-loader-qt5
+Requires: statefs-loader-qt5 >= 0.0.9
 Requires: bluez-libs >= 4.0
 Obsoletes: contextkit-meego-bluetooth <= %{meego_ver}
 Provides: contextkit-meego-bluetooth = %{meego_ver1}
@@ -110,7 +110,7 @@ Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
-Requires: statefs-loader-qt5
+Requires: statefs-loader-qt5 >= 0.0.9
 Requires: upower >= 0.9.18
 Obsoletes: contextkit-meego-battery-upower <= %{meego_ver}
 Provides: contextkit-meego-battery-upower = %{meego_ver1}
@@ -132,7 +132,7 @@ Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
-Requires: statefs-loader-qt5
+Requires: statefs-loader-qt5 >= 0.0.9
 Requires: connman >= 1.15
 Obsoletes: contextkit-meego-internet <= %{meego_ver}
 Provides: contextkit-meego-internet = %{meego_ver1}
@@ -152,7 +152,7 @@ Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
-Requires: statefs-loader-qt5
+Requires: statefs-loader-qt5 >= 0.0.9
 Requires: ofono >= 1.12
 Obsoletes: contextkit-meego-cellular <= %{meego_ver}
 Provides: contextkit-meego-cellular = %{meego_ver1}
@@ -175,7 +175,7 @@ Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
-Requires: statefs-loader-qt5
+Requires: statefs-loader-qt5 >= 0.0.9
 BuildRequires: pkgconfig(mce)
 Obsoletes: statefs-provider-inout-mce <= 0.2.43
 Provides: statefs-provider-inout-mce = 0.2.44
@@ -196,7 +196,7 @@ Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
-Requires: statefs-loader-qt5
+Requires: statefs-loader-qt5 >= 0.0.9
 BuildRequires: pkgconfig(cor-udev) >= 0.1.11
 Obsoletes: contextkit-plugin-keyboard-generic <= %{ckit_version}
 Provides: contextkit-plugin-keyboard-generic = %{ckit_version1}
@@ -213,7 +213,7 @@ Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
-Requires: statefs-loader-qt5
+Requires: statefs-loader-qt5 >= 0.0.9
 Requires: profiled >= 0.30
 Obsoletes: contextkit-plugin-profile <= %{ckit_version}
 Provides: contextkit-plugin-profile = %{ckit_version1}
