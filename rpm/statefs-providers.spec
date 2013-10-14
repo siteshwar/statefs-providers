@@ -464,6 +464,9 @@ statefs unregister %{_statefs_libdir}/libprovider-bluez.so || :
 /sbin/ldconfig
 %statefs_postun
 
+%posttrans %{p_bluez}
+%statefs_provider_register qt5 bluez system
+
 %files %{p_upower} -f upower.files
 %defattr(-,root,root,-)
 
@@ -483,6 +486,9 @@ statefs unregister %{_statefs_libdir}/libprovider-upower.so || :
 %postun %{p_upower}
 /sbin/ldconfig
 %statefs_postun
+
+%posttrans %{p_upower}
+%statefs_provider_register qt5 upower system
 
 %files %{p_connman} -f connman.files
 %defattr(-,root,root,-)
@@ -504,6 +510,9 @@ statefs unregister %{_statefs_libdir}/libprovider-connman.so || :
 /sbin/ldconfig
 %statefs_postun
 
+%posttrans %{p_connman}
+%statefs_provider_register qt5 connman system
+
 %files %{p_ofono} -f ofono.files
 %defattr(-,root,root,-)
 
@@ -523,6 +532,9 @@ statefs unregister %{_statefs_libdir}/libprovider-ofono.so || :
 %postun %{p_ofono}
 /sbin/ldconfig
 %statefs_postun
+
+%posttrans %{p_ofono}
+%statefs_provider_register qt5 ofono system
 
 %files %{p_mce} -f mce.files
 %defattr(-,root,root,-)
@@ -544,6 +556,9 @@ statefs unregister %{_statefs_libdir}/libprovider-mce.so || :
 /sbin/ldconfig
 %statefs_postun
 
+%posttrans %{p_mce}
+%statefs_provider_register qt5 mce system
+
 %files %{p_keyboard_generic} -f keyboard_generic.files
 %defattr(-,root,root,-)
 
@@ -564,6 +579,9 @@ statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so || :
 /sbin/ldconfig
 %statefs_postun
 
+%posttrans %{p_keyboard_generic}
+%statefs_provider_register qt5 keyboard_generic system
+
 
 %files %{p_profile} -f profile.files
 %defattr(-,root,root,-)
@@ -583,6 +601,9 @@ statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so || :
 %postun %{p_profile}
 /sbin/ldconfig
 %statefs_postun
+
+%posttrans %{p_profile}
+%statefs_provider_register qt5 profile
 
 
 
@@ -605,6 +626,8 @@ statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so || :
 /sbin/ldconfig
 %statefs_postun
 
+%posttrans %{p_udev}
+%statefs_provider_register default udev system
 
 
 
