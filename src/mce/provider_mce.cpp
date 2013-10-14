@@ -53,6 +53,7 @@ void Bridge::init_request()
         updateProperty("PowerSaveMode", v);
     };
     auto on_display = [this, ns](QString const& v) {
+        qDebug() << "Display:" << v;
         ns->set_blanked(v == "off");
     };
 

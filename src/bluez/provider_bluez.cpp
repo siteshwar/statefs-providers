@@ -27,24 +27,6 @@
 #include <functional>
 #include <statefs/qt/dbus.hpp>
 
-/*
-QDBusArgument & operator <<(QDBusArgument &argument, BluezService const& src)
-{
-    argument.beginStructure();
-    argument << src.i << src.s;
-    argument.endStructure();
-    return argument;
-}
-
-QDBusArgument const& operator >> (QDBusArgument const& argument, BluezService &dst)
-{
-    argument.beginStructure();
-    argument >> dst.i >> dst.s;
-    argument.endStructure();
-    return argument;
-}
-*/
-
 namespace statefs { namespace bluez {
 
 using statefs::qt::Namespace;
