@@ -76,6 +76,8 @@ Requires: ofono >= 1.12
 
 decl_mce = '''
 BuildRequires: pkgconfig(mce)
+Obsoletes: statefs-provider-inout-mce <= 0.2.43
+Provides: statefs-provider-inout-mce = 0.2.44
 '''
 
 decl_profile = '''
@@ -143,7 +145,7 @@ class Actions:
             , "power" : "power"
             , "network" : ["internet", "network"]
             , "cellular" : "cellular"
-            , "mce" : "system"
+            , "mode_control" : "system"
             , "keyboard" : "keyboard"
             , "profile" : "profile"
             , "location" : "location"
@@ -156,7 +158,7 @@ class Actions:
             , "upower" : [ "udev", "inout-power" ]
             , "connman" : "inout-network"
             , "ofono" : "inout-cellular"
-            , "mce" : "inout-mce"
+            , "mce" : "inout-mode-control"
             , "keyboard_generic" : "inout-keyboard"
             , "profile" : "inout-profile"
         }, "default" : {
@@ -166,7 +168,7 @@ class Actions:
             , "power" : [ "upower", "udev" ]
             , "network" : [ "connman" ]
             , "cellular" : "ofono"
-            , "mce" : "mce"
+            , "mode_control" : "mce"
             , "keyboard" : "keyboard_generic"
             , "profile" : "profile"
             , "location" : "geoclue"
@@ -189,7 +191,7 @@ class Actions:
             , "power" : ": power properties"
             , "network" : ": network properties"
             , "cellular" : ": cellular properties"
-            , "mce" : ": system properties"
+            , "mode_control" : ": system properties"
             , "keyboard" : ": keyboard properties"
             , "profile" : ": profile properties"
             , "location" : ": location properties"
@@ -298,7 +300,7 @@ class Actions:
 
     old_names = { "keyboard_generic" : "keyboard-generic" }
 
-    inout_system = ["bluetooth", "power", "network", "cellular", "mce"
+    inout_system = ["bluetooth", "power", "network", "cellular", "mode_control"
                     , "keyboard", "location"]
     inout_user = ["profile"]
 

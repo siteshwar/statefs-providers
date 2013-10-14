@@ -4,7 +4,7 @@ install(FILES
   inout_bluetooth.conf
   inout_cellular.conf
   inout_keyboard.conf
-  inout_mce.conf
+  inout_mode_control.conf
   inout_network.conf
   inout_profile.conf
   inout_power.conf

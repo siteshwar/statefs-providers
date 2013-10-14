@@ -77,7 +77,7 @@ Requires: statefs-providers-qt5 = %{version}-%{release}
 %define p_inout_power -n statefs-provider-inout-power
 %define p_inout_network -n statefs-provider-inout-network
 %define p_inout_cellular -n statefs-provider-inout-cellular
-%define p_inout_mce -n statefs-provider-inout-mce
+%define p_inout_mode_control -n statefs-provider-inout-mode-control
 %define p_inout_profile -n statefs-provider-inout-profile
 %define p_inout_keyboard -n statefs-provider-inout-keyboard
 %define p_inout_location -n statefs-provider-inout-location
@@ -177,12 +177,14 @@ Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
 Requires: statefs-loader-qt5
 BuildRequires: pkgconfig(mce)
+Obsoletes: statefs-provider-inout-mce <= 0.2.43
+Provides: statefs-provider-inout-mce = 0.2.44
 Obsoletes: contextkit-maemo-mce <= %{maemo_ver}
 Provides: contextkit-maemo-mce = %{maemo_ver1}
 Obsoletes: contextkit-plugin-mce <= %{ckit_version}
 Provides: contextkit-plugin-mce = %{ckit_version1}
 Provides: statefs-provider-system = %{version}-%{release}
-Conflicts: statefs-provider-inout-mce
+Conflicts: statefs-provider-inout-mode-control
 %description -n statefs-provider-mce
 %{summary}
 
@@ -320,7 +322,7 @@ BuildArch: noarch
 %{summary}
 
 
-%package -n statefs-provider-inout-mce
+%package -n statefs-provider-inout-mode-control
 Summary: Statefs inout provider: system properties
 Group: System Environment/Libraries
 Requires: statefs >= %{statefs_ver}
@@ -332,7 +334,7 @@ Provides: contextkit-plugin-mce = %{ckit_version1}
 Provides: statefs-provider-system = %{version}-%{release}
 Conflicts: statefs-provider-mce
 BuildArch: noarch
-%description -n statefs-provider-inout-mce
+%description -n statefs-provider-inout-mode-control
 %{summary}
 
 
@@ -418,7 +420,7 @@ pushd inout && make install DESTDIR=%{buildroot} && popd
 %statefs_provider_install inout inout_power %{_statefs_datadir}/inout_power.conf system
 %statefs_provider_install inout inout_network %{_statefs_datadir}/inout_network.conf system
 %statefs_provider_install inout inout_cellular %{_statefs_datadir}/inout_cellular.conf system
-%statefs_provider_install inout inout_mce %{_statefs_datadir}/inout_mce.conf system
+%statefs_provider_install inout inout_mode_control %{_statefs_datadir}/inout_mode_control.conf system
 %statefs_provider_install inout inout_keyboard %{_statefs_datadir}/inout_keyboard.conf system
 %statefs_provider_install inout inout_location %{_statefs_datadir}/inout_location.conf system
 
@@ -678,22 +680,22 @@ statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so || :
 %postun %{p_inout_cellular}
 %statefs_postun
 
-%files %{p_inout_mce} -f inout_mce.files
+%files %{p_inout_mode_control} -f inout_mode_control.files
 %defattr(-,root,root,-)
 
-%pre %{p_inout_mce}
+%pre %{p_inout_mode_control}
 %statefs_pre
 
-%post %{p_inout_mce}
-%{_statefs_libdir}/provider-do unregister inout inout_mce
-%statefs_provider_register inout inout_mce system
+%post %{p_inout_mode_control}
+%{_statefs_libdir}/provider-do unregister inout inout_mode_control
+%statefs_provider_register inout inout_mode_control system
 %statefs_post
 
-%preun %{p_inout_mce}
+%preun %{p_inout_mode_control}
 %statefs_preun
-%statefs_provider_unregister inout inout_mce
+%statefs_provider_unregister inout inout_mode_control
 
-%postun %{p_inout_mce}
+%postun %{p_inout_mode_control}
 %statefs_postun
 
 %files %{p_inout_keyboard} -f inout_keyboard.files

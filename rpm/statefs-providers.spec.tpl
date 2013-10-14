@@ -77,7 +77,7 @@ Requires: statefs-providers-qt5 = %{version}-%{release}
 %define p_inout_power -n statefs-provider-inout-power
 %define p_inout_network -n statefs-provider-inout-network
 %define p_inout_cellular -n statefs-provider-inout-cellular
-%define p_inout_mce -n statefs-provider-inout-mce
+%define p_inout_mode_control -n statefs-provider-inout-mode-control
 %define p_inout_profile -n statefs-provider-inout-profile
 %define p_inout_keyboard -n statefs-provider-inout-keyboard
 %define p_inout_location -n statefs-provider-inout-location
