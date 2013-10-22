@@ -78,8 +78,11 @@ Bridge::Bridge(MainNs *ns, QDBusConnection &bus)
                 updateProperty("SignalBars", (strength + 19) / 20);
             } }
         , { "Status", [this](QVariant const &v) {
-                if (!sim_)
+                if (!sim_) {
+                    qWarning() << "No sim, should network properties be processed?";
+                    updateProperty("RegistrationStatus", "no-sim");
                     return;
+                }
                 auto status = v.toString();
                 auto it = status_map_.find(status);
                 status = (it != status_map_.end())
@@ -118,8 +121,8 @@ void Bridge::reset_modem()
 void Bridge::reset_sim()
 {
     qDebug() << "Resetting sim properties";
-    sim_.reset();
     network_.reset();
+    sim_.reset();
     has_sim_ = false;
     static_cast<MainNs*>(target_)->resetProperties(MainNs::NoSimDefault);
 }
@@ -137,8 +140,10 @@ void Bridge::process_features(QStringList const &v)
     qDebug() << "Features: " << features;
     bool has_sim_feature = features.contains("sim");
     if (sim_) {
-        if (!has_sim_feature)
+        if (!has_sim_feature) {
+            qDebug() << "No sim feature";
             reset_sim();
+        }
     } else if (has_sim_feature) {
         setup_sim(modem_path_);
     }
@@ -229,6 +234,10 @@ void Bridge::setup_network(QString const &path)
     qDebug() << "Getting network properties";
     auto update = [this](QString const &n, QVariant const &v) {
         DBG() << "Network: " << n << "=" << v;
+        if (!sim_) {
+            DBG() << "No sim, reset network";
+            reset_network();
+        }
         auto paction = net_property_actions_.find(n);
         if (paction != net_property_actions_.end()) {
             auto action = paction->second;
@@ -244,10 +253,12 @@ void Bridge::setup_network(QString const &path)
     auto props = res.value();
     for (auto it = props.begin(); it != props.end(); ++it)
         update(it.key(), it.value());
-    connect(network_.get(), &Network::PropertyChanged
-            , [update](QString const &n, QDBusVariant const &v) {
-                update(n, v.variant());
-            });
+
+    if (network_)
+        connect(network_.get(), &Network::PropertyChanged
+                , [update](QString const &n, QDBusVariant const &v) {
+                    update(n, v.variant());
+                });
 }
 
 void Bridge::setup_sim(QString const &path)
@@ -261,6 +272,7 @@ void Bridge::setup_sim(QString const &path)
                 if (!network_)
                     updateProperty("RegistrationStatus", "offline");
             } else {
+                qDebug() << "Ofono: sim is not present";
                 reset_sim();
             }
         } else {
@@ -278,10 +290,12 @@ void Bridge::setup_sim(QString const &path)
     auto props = res.value();
     for (auto it = props.begin(); it != props.end(); ++it)
         update(it.key(), it.value());
-    connect(sim_.get(), &SimManager::PropertyChanged
-            , [update](QString const &n, QDBusVariant const &v) {
-                update(n, v.variant());
-            });
+
+    if (sim_)
+        connect(sim_.get(), &SimManager::PropertyChanged
+                , [update](QString const &n, QDBusVariant const &v) {
+                    update(n, v.variant());
+                });
 }
 
 void MainNs::resetProperties(MainNs::Properties what)
