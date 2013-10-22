@@ -52,7 +52,12 @@ void Bridge::init_conn()
     auto on_changed = [set_profile]
         (bool changed, bool active, const QString &profile
          , ProfileDataList values) {
-        set_profile(profile);
+        if (active) {
+            qDebug() << "Active profile is " << profile;
+            set_profile(profile);
+        } else {
+            qDebug() << "Inactive profile " << profile << " is changed";
+        }
     };
     profiled_.reset(new Profile(service_name, root_path, bus_));
     sync(profiled_->get_profile(), set_profile);
