@@ -31,6 +31,18 @@
 #include <statefs/qt/dbus.hpp>
 #include "dbus_types.hpp"
 
+#ifdef DEBUG
+#define DBG qDebug
+#else
+struct null_stream {};
+template <typename T>
+null_stream operator << (null_stream dst, T)
+{
+    return dst;
+}
+#define DBG null_stream
+#endif
+
 namespace statefs { namespace ofono {
 
 using statefs::qt::Namespace;
@@ -72,6 +84,7 @@ Bridge::Bridge(MainNs *ns, QDBusConnection &bus)
                 auto it = status_map_.find(status);
                 status = (it != status_map_.end())
                     ? it->second : QString("offline");
+                DBG() << "STATUS:" << status << " -> " << v;
                 updateProperty("RegistrationStatus", status);
                 updateProperty("Status", v);
             } }
@@ -147,6 +160,7 @@ bool Bridge::setup_modem(QString const &path, QVariantMap const &props)
     qDebug() << "Hardware modem " << path;
 
     auto update = [this](QString const &n, QVariant const &v) {
+        DBG() << "Modem: " << n << "=" << v;
         if (n == "Features")
             process_features(v.toStringList());
         else if (n == "Powered") {
@@ -214,6 +228,7 @@ void Bridge::setup_network(QString const &path)
 {
     qDebug() << "Getting network properties";
     auto update = [this](QString const &n, QVariant const &v) {
+        DBG() << "Network: " << n << "=" << v;
         auto paction = net_property_actions_.find(n);
         if (paction != net_property_actions_.end()) {
             auto action = paction->second;
@@ -239,6 +254,7 @@ void Bridge::setup_sim(QString const &path)
 {
     qDebug() << "Getting sim properties";
     auto update = [this](QString const &n, QVariant const &v) {
+        DBG() << "Sim: " << n << "=" << v;
         if (n == "Present") {
             has_sim_ = v.toBool();
             if (has_sim_) {
