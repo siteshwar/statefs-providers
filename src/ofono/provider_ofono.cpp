@@ -190,7 +190,7 @@ Bridge::Bridge(MainNs *ns, QDBusConnection &bus)
     , bus_(bus)
     , watch_(bus, service_name)
     , has_sim_(false)
-    , status_(Status::Offline)
+    , status_(Status::Unknown)
     , network_name_{"", ""}
     , set_name_(&Bridge::set_name_home)
 {
@@ -288,6 +288,7 @@ void Bridge::reset_modem()
 void Bridge::reset_sim()
 {
     qDebug() << "Reset sim properties";
+    operator_.reset();
     network_.reset();
     sim_.reset();
     set_status(Status::NoSim);
@@ -299,6 +300,7 @@ void Bridge::reset_network()
     qDebug() << "Reset network properties";
     operator_.reset();
     network_.reset();
+    set_status(Status::Offline);
     auto prop_set = has_sim_ ? MainNs::Default : MainNs::NoSimDefault;
     static_cast<MainNs*>(target_)->resetProperties(prop_set);
 }
@@ -527,7 +529,7 @@ MainNs::MainNs(QDBusConnection &bus)
             { "SignalStrength", "0"}
             , { "DataTechnology", "unknown"}
             , { "RegistrationStatus", "offline"} // contextkit
-            , { "Status", "offline"} // ofono
+            , { "Status", "unregistered"} // ofono
             , { "Technology", "unknown"}
             , { "SignalBars", "0"}
             , { "CellName", ""}
