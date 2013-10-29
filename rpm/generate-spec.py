@@ -82,6 +82,8 @@ Provides: statefs-provider-inout-mce = 0.2.44
 
 decl_profile = '''
 Requires: profiled >= 0.30
+Obsoletes: statefs-provider-inout-profile <= 0.2.44.99
+Provides: statefs-provider-inout-profile = 0.2.44.99
 '''
 
 decl_keyboard_generic = '''
@@ -137,7 +139,7 @@ class Actions:
             , "ofono" : "cellular"
             , "mce" : "system"
             , "keyboard_generic" : "keyboard"
-            , "profile" : "profile"
+            , "profile" : "profile-info"
         }, "default" : {
             "udev" : "power"
         }, "inout" : {
@@ -147,7 +149,7 @@ class Actions:
             , "cellular" : "cellular"
             , "mode_control" : "system"
             , "keyboard" : "keyboard"
-            , "profile" : "profile"
+            , "profile" : "profile-info"
             , "location" : "location"
         }
     }
@@ -218,7 +220,7 @@ class Actions:
             , "cellular" : ["cellular", "ofono"]
             , "system" : "mce"
             , "keyboard" : "keyboard-generic"
-            , "profile" : "profile"
+            , "profile-info" : "profile"
             , "location" : ["location-gypsy", "location-skyhook", "location"]
         }
     }
