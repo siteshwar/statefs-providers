@@ -58,6 +58,8 @@ void Namespace::updateProperty(const QString &name, const QVariant &value)
         auto encoded = valueEncode(value);
         trace() << name << "=" << value << "->" << encoded;
         set(encoded.toStdString());
+    } else {
+        qWarning() << "No setter for " << name;
     }
 }
 
