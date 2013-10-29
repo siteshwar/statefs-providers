@@ -43,6 +43,7 @@
 			<arg type="v"/>
 		</signal>
 	</interface>
+
 	<interface name="org.ofono.NetworkRegistration">
 		<method name="GetProperties">
 			<arg type="a{sv}" direction="out"/>
@@ -53,10 +54,27 @@
 		<method name="Scan">
 			<arg type="ao" direction="out"/>
 		</method>
+		<method name="GetOperators">
+			<arg type="a(oa{sv})" direction="out"/>
+			<annotation name="org.qtproject.QtDBus.QtTypeName.Out0" value="PathPropertiesArray"/>
+		</method>
 		<signal name="PropertyChanged">
 			<arg type="s"/>
 			<arg type="v"/>
 		</signal>
 	</interface>
+
+	<interface name="org.ofono.NetworkOperator">
+		<method name="GetProperties">
+			<arg type="a{sv}" direction="out"/>
+			<annotation name="org.qtproject.QtDBus.QtTypeName.Out0" value="QVariantMap"/>
+		</method>
+		<method name="Register"/>
+		<signal name="PropertyChanged">
+			<arg type="s"/>
+			<arg type="v"/>
+		</signal>
+	</interface>
+
 	<node name="operator"/>
 </node>

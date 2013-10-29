@@ -51,68 +51,235 @@ using statefs::qt::sync;
 
 static char const *service_name = "org.ofono";
 
+
+template <typename K, typename F, typename ... Args>
+void map_exec(std::map<K, F> const &fns, K const &k, Args&&... args)
+{
+    auto pfn = fns.find(k);
+    if (pfn != fns.end())
+        pfn->second(std::forward<Args>(args)...);
+}
+
+template <typename K, typename F, typename AltFn, typename ... Args>
+void map_exec_or(std::map<K, F> const &fns, AltFn alt_fn, K const &k, Args&&... args)
+{
+    auto pfn = fns.find(k);
+    if (pfn != fns.end())
+        pfn->second(std::forward<Args>(args)...);
+    else
+        alt_fn(k, std::forward<Args>(args)...);
+}
+
+template <typename T, typename K, typename F, typename ... Args>
+void map_member_exec(T *self, std::map<K, F> const &fns, K const &k, Args&&... args)
+{
+    auto pfn = fns.find(k);
+    if (pfn != fns.end()) {
+        auto fn = pfn->second;
+        (self->*fn)(std::forward<Args>(args)...);
+    }
+}
+
+template <typename FnT>
+bool find_process_object(PathPropertiesArray const &src, FnT fn)
+{
+    for (auto it = src.begin(); it != src.end(); ++it) {
+        auto const &info = *it;
+        auto path = std::get<0>(info).path();
+        auto props = std::get<1>(info);
+
+        if (fn(path, props))
+            return true;
+    }
+    return false;
+}
+
+typedef Bridge::Status Status;
+
+typedef std::map<QString, std::pair<char const *, char const *> > tech_map_type;
+typedef std::map<QString, Status> status_map_type;
+typedef std::array<QString, size_t(Status::EOE)> status_array_type;
+
+
+static const tech_map_type tech_map_ = {
+    {"gsm", {"gsm", "gprs"}}
+    , {"edge", {"gsm", "egprs"}}
+    , {"hspa", {"umts", "hspa"}}
+    , {"umts", {"umts", "umts"}}
+    , {"lte", {"lte", "lte"}}
+};
+
+static const status_map_type status_map_ = {
+    {"unregistered", Status::Offline}
+    , {"registered", Status::Registered}
+    , {"searching", Status::Searching}
+    , {"denied", Status::Denied}
+    , {"unknown", Status::Unknown}
+    , {"roaming", Status::Roaming}
+};
+
+static const status_array_type ckit_status_ = {{
+    "no-sim", "offline", "home"
+    , "offline", "forbidden", "offline", "roam"
+    }};
+
+static const status_array_type ofono_status_ = {{
+    "unregistered", "unregistered", "registered"
+    , "searching", "denied", "unknown", "roaming"
+    }};
+
+static const std::array<bool, size_t(Status::EOE)> status_registered_ = {{
+    false, false, true, false, false, false, true
+    }};
+
+static const std::map<QString, QString> sim_props_map_ = {
+    { "MobileCountryCode", "HomeMCC" }
+    , { "MobileNetworkCode", "HomeMNC" }
+};
+
+static Bridge::property_action_type direct_update(QString const &name)
+{
+    return [name](Bridge *self, QVariant const &v) {
+        self->updateProperty(name, v);
+    };
+}
+
+static Bridge::property_action_type bind_member
+(void (Bridge::*fn)(QVariant const&))
+{
+    using namespace std::placeholders;
+    return [fn](Bridge *self, QVariant const &v) {
+        (self->*fn)(v);
+    };
+}
+
+const Bridge::property_map_type Bridge::net_property_actions_ = {
+    { "Name", bind_member(&Bridge::set_network_name)}
+    , { "Strength", [](Bridge *self, QVariant const &v) {
+            auto strength = v.toUInt();
+            self->updateProperty("SignalStrength", strength);
+            // 0-5
+            self->updateProperty("SignalBars", (strength + 19) / 20);
+        } }
+    , { "Status", [](Bridge *self, QVariant const &v) {
+            self->updateProperty("Status", v);
+            self->set_status(self->map_status(v.toString()));
+        } }
+    , { "CellId", direct_update("CellName") }
+    , { "MobileCountryCode", direct_update("CurrentMCC") }
+    , { "MobileNetworkCode", direct_update("CurrentMNC") }
+    , { "CellId", direct_update("CellName") }
+    , { "Technology", [](Bridge *self, QVariant const &v) {
+            auto tech = v.toString();
+            auto pt = tech_map_.find(tech);
+            if (pt != tech_map_.end()) {
+                auto tech_dtech = pt->second;
+                self->updateProperty("Technology", tech_dtech.first);
+                self->updateProperty("DataTechnology", tech_dtech.second);
+            }
+        } }
+};
+
+const Bridge::property_map_type Bridge::operator_property_actions_ = {
+    { "Name", bind_member(&Bridge::set_operator_name)}
+};
+
+
 Bridge::Bridge(MainNs *ns, QDBusConnection &bus)
     : PropertiesSource(ns)
     , bus_(bus)
     , watch_(bus, service_name)
     , has_sim_(false)
-    , tech_map_{
-    {"gsm", {"gsm", "gprs"}}
-    , {"edge", {"gsm", "egprs"}}
-    , {"hspa", {"umts", "hspa"}}
-    , {"umts", {"umts", "umts"}}
-    , {"lte", {"lte", "lte"}}}
-    , status_map_{
-        {"registered", "home"}
-        , {"roaming", "roam"}
-        , {"denied", "forbidden"}}
-    , net_property_actions_({
-        { "Name", [this](QVariant const &v) {
-                updateProperty("NetworkName", v);
-                updateProperty("ExtendedNetworkName", v);
-            } }
-        , { "Strength", [this](QVariant const &v) {
-                auto strength = v.toUInt();
-                updateProperty("SignalStrength", strength);
-                // 0-5
-                updateProperty("SignalBars", (strength + 19) / 20);
-            } }
-        , { "Status", [this](QVariant const &v) {
-                if (!sim_) {
-                    qWarning() << "No sim, should network properties be processed?";
-                    updateProperty("RegistrationStatus", "no-sim");
-                    return;
-                }
-                auto status = v.toString();
-                auto it = status_map_.find(status);
-                status = (it != status_map_.end())
-                    ? it->second : QString("offline");
-                DBG() << "STATUS:" << status << " -> " << v;
-                updateProperty("RegistrationStatus", status);
-                updateProperty("Status", v);
-            } }
-        , { "CellId", [this](QVariant const &v) {
-                updateProperty("CellName", v);
-            } }
-        , { "Technology", [this](QVariant const &v) {
-                auto tech = v.toString();
-                auto pt = tech_map_.find(tech);
-                if (pt != tech_map_.end()) {
-                    auto tech_dtech = pt->second;
-                    updateProperty("Technology", tech_dtech.first);
-                    updateProperty("DataTechnology", tech_dtech.second);
-                }
-            } }
-    })
-    , sim_props_map_({
-            {"MobileCountryCode", "CountryCode"}
-            , {"MobileNetworkCode", "NetworkCode"}})
+    , status_(Status::Offline)
+    , network_name_{"", ""}
+    , set_name_(&Bridge::set_name_home)
 {
+}
+
+void Bridge::set_network_name(QVariant const &v)
+{
+    network_name_.first = v.toString();
+    (this->*set_name_)();
+}
+
+void Bridge::set_operator_name(QVariant const &v)
+{
+    network_name_.second = v.toString();
+    (this->*set_name_)();
+}
+
+void Bridge::set_name_home()
+{
+    auto name = network_name_.first;
+    if (!name.size())
+        name = network_name_.second;
+    updateProperty("NetworkName", name);
+    updateProperty("ExtendedNetworkName", name);
+}
+
+void Bridge::set_name_roaming()
+{
+    auto name = network_name_.first;
+    if (!name.size())
+        name = network_name_.second;
+    updateProperty("NetworkName", name);
+    updateProperty("ExtendedNetworkName", name);
+}
+
+Status Bridge::map_status(QString const &name)
+{
+    auto it = status_map_.find(name);
+    return (it != status_map_.end()) ? it->second : Status::Offline;
+}
+
+void Bridge::set_status(Status new_status)
+{
+    if (new_status == status_)
+        return;
+
+    DBG() << "Set Status " << (int)status_ << "->" << (int)new_status;
+    if (!has_sim_ && new_status != Status::NoSim) {
+        qWarning() << "No sim, should network properties be processed?";
+        set_status(Status::NoSim);
+        return;
+    }
+    if (new_status == Status::NoSim)
+        has_sim_ = false;
+
+    auto expected = (new_status == Status::Roaming
+                     ? &Bridge::set_name_roaming
+                     : &Bridge::set_name_home);
+    if (expected != set_name_) {
+        set_name_ = expected;
+
+    }
+
+    auto iwas = static_cast<size_t>(status_);
+    auto inew = static_cast<size_t>(new_status);
+    auto is_registered = status_registered_[inew];
+
+    if (is_registered != status_registered_[iwas]) {
+        qDebug() << (is_registered ? "Registered" : "Unregistered");
+        if (is_registered) {
+            if (!modem_) {
+                qWarning() << "Network w/o modem?";
+            } else if (!sim_) {
+                setup_sim(modem_path_);
+            } else if (!network_) {
+                setup_network(modem_path_);
+            } else {
+                enumerate_operators();
+            }
+        }
+    }
+    status_ = new_status;
+    
+    updateProperty("RegistrationStatus", ckit_status_[inew]);
 }
 
 void Bridge::reset_modem()
 {
-    qDebug() << "Resetting mode properties";
+    qDebug() << "Reset mode properties";
     modem_path_ = "";
     modem_.reset();
     reset_sim();
@@ -120,18 +287,20 @@ void Bridge::reset_modem()
 
 void Bridge::reset_sim()
 {
-    qDebug() << "Resetting sim properties";
+    qDebug() << "Reset sim properties";
     network_.reset();
     sim_.reset();
-    has_sim_ = false;
+    set_status(Status::NoSim);
     static_cast<MainNs*>(target_)->resetProperties(MainNs::NoSimDefault);
 }
 
 void Bridge::reset_network()
 {
-    qDebug() << "Resetting network properties";
+    qDebug() << "Reset network properties";
+    operator_.reset();
     network_.reset();
-    static_cast<MainNs*>(target_)->resetProperties(MainNs::Default);
+    auto prop_set = has_sim_ ? MainNs::Default : MainNs::NoSimDefault;
+    static_cast<MainNs*>(target_)->resetProperties(prop_set);
 }
 
 void Bridge::process_features(QStringList const &v)
@@ -165,7 +334,7 @@ bool Bridge::setup_modem(QString const &path, QVariantMap const &props)
     qDebug() << "Hardware modem " << path;
 
     auto update = [this](QString const &n, QVariant const &v) {
-        DBG() << "Modem: " << n << "=" << v;
+        DBG() << "Modem prop: " << n << "=" << v;
         if (n == "Features")
             process_features(v.toStringList());
         else if (n == "Powered") {
@@ -178,6 +347,35 @@ bool Bridge::setup_modem(QString const &path, QVariantMap const &props)
     modem_path_ = path;
 
     connect(modem_.get(), &Modem::PropertyChanged
+            , [update](QString const &n, QDBusVariant const &v) {
+                update(n, v.variant());
+            });
+    for (auto it = props.begin(); it != props.end(); ++it)
+        update(it.key(), it.value());
+    return true;
+}
+
+bool Bridge::setup_operator(QString const &path, QVariantMap const &props)
+{
+    qDebug() << "Operator " << props["Name"];
+    auto status = props["Status"].toString();
+    if (status != "current")
+        return false;
+
+    qDebug() << "Setup current operator properties";
+
+    auto update = [this](QString const &n, QVariant const &v) {
+        DBG() << "Operator prop: " << n << "=" << v;
+        if (!sim_) {
+            DBG() << "No sim, reset network";
+            reset_network();
+        }
+        map_exec(operator_property_actions_, n, this, v);
+    };
+
+    operator_.reset(new Operator(service_name, path, bus_));
+    operator_path_ = path;
+    connect(operator_.get(), &Operator::PropertyChanged
             , [update](QString const &n, QDBusVariant const &v) {
                 update(n, v.variant());
             });
@@ -202,14 +400,8 @@ void Bridge::init()
         if (!modems.size())
             return;
 
-        for (auto it = modems.begin(); it != modems.end(); ++it) {
-            auto const &info = *it;
-            auto path = std::get<0>(info).path();
-            auto props = std::get<1>(info);
-
-            if (setup_modem(path, props))
-                break;
-        }
+        using namespace std::placeholders;
+        find_process_object(modems, std::bind(&Bridge::setup_modem, this, _1, _2));
         connect(manager_.get(), &Manager::ModemAdded
                 , [this](QDBusObjectPath const &n, QVariantMap const&p) {
                     setup_modem(n.path(), p);
@@ -231,49 +423,67 @@ void Bridge::init()
 
 void Bridge::setup_network(QString const &path)
 {
-    qDebug() << "Getting network properties";
+    qDebug() << "Get network properties";
     auto update = [this](QString const &n, QVariant const &v) {
-        DBG() << "Network: " << n << "=" << v;
-        if (!sim_) {
+        DBG() << "Network: prop" << n << "=" << v;
+        if (!has_sim_) {
             DBG() << "No sim, reset network";
             reset_network();
         }
-        auto paction = net_property_actions_.find(n);
-        if (paction != net_property_actions_.end()) {
-            auto action = paction->second;
-            action(v);
-        }
+        map_exec(net_property_actions_, n, this, v);
     };
+
     network_.reset(new Network(service_name, path, bus_));
     auto res = sync(network_->GetProperties());
     if (res.isError()) {
         qWarning() << "Network GetProperties error:" << res.error();
         return;
     }
+
     auto props = res.value();
     for (auto it = props.begin(); it != props.end(); ++it)
         update(it.key(), it.value());
 
-    if (network_)
-        connect(network_.get(), &Network::PropertyChanged
-                , [update](QString const &n, QDBusVariant const &v) {
-                    update(n, v.variant());
-                });
+    if (!network_) {
+        qDebug() << "No network interface";
+        return;
+    }
+    DBG() << "Connect Network::PropertyChanged";
+    connect(network_.get(), &Network::PropertyChanged
+            , [update](QString const &n, QDBusVariant const &v) {
+                update(n, v.variant());
+            });
+}
+
+void Bridge::enumerate_operators()
+{
+    if (!network_) {
+        qWarning() << "Can't enumerate operators, network is null";
+        return;
+    }
+    auto ops = sync(network_->GetOperators());
+    if (ops.isError()) {
+        qWarning() << "Network GetOperators error:" << ops.error();
+        return;
+    }
+    using namespace std::placeholders;
+    auto process = std::bind(&Bridge::setup_operator, this, _1, _2);
+    find_process_object(ops, process);
 }
 
 void Bridge::setup_sim(QString const &path)
 {
-    qDebug() << "Getting sim properties";
+    qDebug() << "Get sim properties";
     auto update = [this](QString const &n, QVariant const &v) {
-        DBG() << "Sim: " << n << "=" << v;
+        DBG() << "Sim prop: " << n << "=" << v;
         if (n == "Present") {
             has_sim_ = v.toBool();
             if (has_sim_) {
                 if (!network_)
-                    updateProperty("RegistrationStatus", "offline");
+                    set_status(Status::Offline);
             } else {
                 qDebug() << "Ofono: sim is not present";
-                reset_sim();
+                set_status(Status::NoSim);
             }
         } else {
             auto it = sim_props_map_.find(n);
@@ -323,8 +533,11 @@ MainNs::MainNs(QDBusConnection &bus)
             , { "CellName", ""}
             , { "NetworkName", ""}
             , { "ExtendedNetworkName", "" }
-            , { "CountryCode", "0"}
-            , { "NetworkCode", "0"}})
+            , { "CurrentMCC", "0"}
+            , { "CurrentMNC", "0"}
+            , { "HomeMCC", "0"}
+            , { "HomeMNC", "0"}
+        })
 {
     for (auto v : defaults_)
         addProperty(v.first, v.second);
