@@ -215,9 +215,11 @@ Requires(postun): /sbin/ldconfig
 Requires: %{n_common} = %{version}-%{release}
 Requires: statefs-loader-qt5 >= 0.0.9
 Requires: profiled >= 0.30
+Obsoletes: statefs-provider-inout-profile <= 0.2.44.99
+Provides: statefs-provider-inout-profile = 0.2.44.99
 Obsoletes: contextkit-plugin-profile <= %{ckit_version}
 Provides: contextkit-plugin-profile = %{ckit_version1}
-Provides: statefs-provider-profile = %{version}-%{release}
+Provides: statefs-provider-profile-info = %{version}-%{release}
 Conflicts: statefs-provider-inout-profile
 %description -n statefs-provider-profile
 %{summary}
@@ -381,7 +383,7 @@ Requires: statefs >= %{statefs_ver}
 
 Obsoletes: contextkit-plugin-profile <= %{ckit_version}
 Provides: contextkit-plugin-profile = %{ckit_version1}
-Provides: statefs-provider-profile = %{version}-%{release}
+Provides: statefs-provider-profile-info = %{version}-%{release}
 Conflicts: statefs-provider-profile
 BuildArch: noarch
 %description -n statefs-provider-inout-profile
