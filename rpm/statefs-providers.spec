@@ -6,7 +6,7 @@
 %define maemo_ver1 0.7.31
 %define meego_ver 0.1.0
 %define meego_ver1 0.1.0.1
-%define statefs_ver 0.3.19
+%define statefs_ver 0.3.24
 
 Summary: Statefs providers
 Name: statefs-providers
@@ -451,7 +451,9 @@ rm -rf %{buildroot}
 
 %pre %{p_bluez}
 %statefs_pre
+if [ -f %{_statefs_libdir}/libprovider-bluez.so ]; then
 statefs unregister %{_statefs_libdir}/libprovider-bluez.so || :
+fi
 
 %post %{p_bluez}
 /sbin/ldconfig
@@ -466,15 +468,14 @@ statefs unregister %{_statefs_libdir}/libprovider-bluez.so || :
 /sbin/ldconfig
 %statefs_postun
 
-%posttrans %{p_bluez}
-%statefs_provider_register qt5 bluez system
-
 %files %{p_upower} -f upower.files
 %defattr(-,root,root,-)
 
 %pre %{p_upower}
 %statefs_pre
+if [ -f %{_statefs_libdir}/libprovider-upower.so ]; then
 statefs unregister %{_statefs_libdir}/libprovider-upower.so || :
+fi
 
 %post %{p_upower}
 /sbin/ldconfig
@@ -489,15 +490,14 @@ statefs unregister %{_statefs_libdir}/libprovider-upower.so || :
 /sbin/ldconfig
 %statefs_postun
 
-%posttrans %{p_upower}
-%statefs_provider_register qt5 upower system
-
 %files %{p_connman} -f connman.files
 %defattr(-,root,root,-)
 
 %pre %{p_connman}
 %statefs_pre
+if [ -f %{_statefs_libdir}/libprovider-connman.so ]; then
 statefs unregister %{_statefs_libdir}/libprovider-connman.so || :
+fi
 
 %post %{p_connman}
 /sbin/ldconfig
@@ -512,15 +512,14 @@ statefs unregister %{_statefs_libdir}/libprovider-connman.so || :
 /sbin/ldconfig
 %statefs_postun
 
-%posttrans %{p_connman}
-%statefs_provider_register qt5 connman system
-
 %files %{p_ofono} -f ofono.files
 %defattr(-,root,root,-)
 
 %pre %{p_ofono}
 %statefs_pre
+if [ -f %{_statefs_libdir}/libprovider-ofono.so ]; then
 statefs unregister %{_statefs_libdir}/libprovider-ofono.so || :
+fi
 
 %post %{p_ofono}
 /sbin/ldconfig
@@ -535,15 +534,14 @@ statefs unregister %{_statefs_libdir}/libprovider-ofono.so || :
 /sbin/ldconfig
 %statefs_postun
 
-%posttrans %{p_ofono}
-%statefs_provider_register qt5 ofono system
-
 %files %{p_mce} -f mce.files
 %defattr(-,root,root,-)
 
 %pre %{p_mce}
 %statefs_pre
+if [ -f %{_statefs_libdir}/libprovider-mce.so ]; then
 statefs unregister %{_statefs_libdir}/libprovider-mce.so || :
+fi
 
 %post %{p_mce}
 /sbin/ldconfig
@@ -558,15 +556,14 @@ statefs unregister %{_statefs_libdir}/libprovider-mce.so || :
 /sbin/ldconfig
 %statefs_postun
 
-%posttrans %{p_mce}
-%statefs_provider_register qt5 mce system
-
 %files %{p_keyboard_generic} -f keyboard_generic.files
 %defattr(-,root,root,-)
 
 %pre %{p_keyboard_generic}
 %statefs_pre
+if [ -f %{_statefs_libdir}/libprovider-keyboard-generic.so ]; then
 statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so || :
+fi
 
 %post %{p_keyboard_generic}
 /sbin/ldconfig
@@ -580,9 +577,6 @@ statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so || :
 %postun %{p_keyboard_generic}
 /sbin/ldconfig
 %statefs_postun
-
-%posttrans %{p_keyboard_generic}
-%statefs_provider_register qt5 keyboard_generic system
 
 
 %files %{p_profile} -f profile.files
@@ -604,9 +598,6 @@ statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so || :
 /sbin/ldconfig
 %statefs_postun
 
-%posttrans %{p_profile}
-%statefs_provider_register qt5 profile
-
 
 
 %files %{p_udev} -f udev.files
@@ -627,9 +618,6 @@ statefs unregister %{_statefs_libdir}/libprovider-keyboard-generic.so || :
 %postun %{p_udev}
 /sbin/ldconfig
 %statefs_postun
-
-%posttrans %{p_udev}
-%statefs_provider_register default udev system
 
 
 

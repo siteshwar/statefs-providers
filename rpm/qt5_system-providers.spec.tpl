@@ -4,7 +4,9 @@
 
 %pre %{{p_{name}}}
 %statefs_pre
+if [ -f %{{_statefs_libdir}}/libprovider-{old_name}.so ]; then
 statefs unregister %{{_statefs_libdir}}/libprovider-{old_name}.so || :
+fi
 
 %post %{{p_{name}}}
 /sbin/ldconfig
@@ -18,6 +20,3 @@ statefs unregister %{{_statefs_libdir}}/libprovider-{old_name}.so || :
 %postun %{{p_{name}}}
 /sbin/ldconfig
 %statefs_postun
-
-%posttrans %{{p_{name}}}
-%statefs_provider_register qt5 {name} system

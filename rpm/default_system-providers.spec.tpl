@@ -17,6 +17,3 @@
 %postun %{{p_{name}}}
 /sbin/ldconfig
 %statefs_postun
-
-%posttrans %{{p_{name}}}
-%statefs_provider_register default {name} system
