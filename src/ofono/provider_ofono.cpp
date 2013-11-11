@@ -310,12 +310,10 @@ void Bridge::process_features(QStringList const &v)
     auto features = QSet<QString>::fromList(v);
     qDebug() << "Features: " << features;
     bool has_sim_feature = features.contains("sim");
-    if (sim_) {
-        if (!has_sim_feature) {
-            qDebug() << "No sim feature";
-            reset_sim();
-        }
-    } else if (has_sim_feature) {
+    if (!has_sim_feature) {
+        qDebug() << "No sim feature";
+        reset_sim();
+    } else if (!sim_) {
         setup_sim(modem_path_);
     }
     bool has_net = features.contains("net");
