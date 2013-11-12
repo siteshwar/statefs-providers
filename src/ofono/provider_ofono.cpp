@@ -96,6 +96,19 @@ bool find_process_object(PathPropertiesArray const &src, FnT fn)
 
 typedef Bridge::Status Status;
 
+
+QDebug & operator << (QDebug &dst, Status src)
+{
+    static const char *names[] = {
+        "NoSim", "Offline", "Registered", "Searching"
+        , "Denied", "Unknown", "Roaming"
+    };
+    static_assert(sizeof(names)/sizeof(names[0]) == size_t(Status::EOE)
+                  , "Check Status values names");
+    dst << names[size_t(src)];
+    return dst;
+}
+
 typedef std::map<QString, std::pair<char const *, char const *> > tech_map_type;
 typedef std::map<QString, Status> status_map_type;
 typedef std::array<QString, size_t(Status::EOE)> status_array_type;
@@ -162,6 +175,7 @@ const Bridge::property_map_type Bridge::net_property_actions_ = {
             self->updateProperty("SignalBars", (strength + 19) / 20);
         } }
     , { "Status", [](Bridge *self, QVariant const &v) {
+            qDebug() << "Ofono status " << v.toString();
             self->updateProperty("Status", v);
             self->set_status(self->map_status(v.toString()));
         } }
@@ -237,7 +251,7 @@ void Bridge::set_status(Status new_status)
     if (new_status == status_)
         return;
 
-    DBG() << "Set Status " << (int)status_ << "->" << (int)new_status;
+    qDebug() << "Cellular status " << status_ << "->" << new_status;
     if (!has_sim_ && new_status != Status::NoSim) {
         qWarning() << "No sim, should network properties be processed?";
         set_status(Status::NoSim);
@@ -279,7 +293,7 @@ void Bridge::set_status(Status new_status)
 
 void Bridge::reset_modem()
 {
-    qDebug() << "Reset mode properties";
+    qDebug() << "Reset modem properties";
     modem_path_ = "";
     modem_.reset();
     reset_sim();
@@ -297,7 +311,7 @@ void Bridge::reset_sim()
 
 void Bridge::reset_network()
 {
-    qDebug() << "Reset network properties";
+    qDebug() << "Reset cellular network properties";
     operator_.reset();
     network_.reset();
     set_status(Status::Offline);
@@ -308,7 +322,7 @@ void Bridge::reset_network()
 void Bridge::process_features(QStringList const &v)
 {
     auto features = QSet<QString>::fromList(v);
-    qDebug() << "Features: " << features;
+    qDebug() << "Cellular features: " << features;
     bool has_sim_feature = features.contains("sim");
     if (!has_sim_feature) {
         qDebug() << "No sim feature";
@@ -423,7 +437,7 @@ void Bridge::init()
 
 void Bridge::setup_network(QString const &path)
 {
-    qDebug() << "Get network properties";
+    qDebug() << "Get cellular network properties";
     auto update = [this](QString const &n, QVariant const &v) {
         DBG() << "Network: prop" << n << "=" << v;
         if (!has_sim_) {
