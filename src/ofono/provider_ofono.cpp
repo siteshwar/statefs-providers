@@ -263,16 +263,18 @@ void Bridge::set_status(Status new_status)
     auto expected = (new_status == Status::Roaming
                      ? &Bridge::set_name_roaming
                      : &Bridge::set_name_home);
-    if (expected != set_name_) {
-        set_name_ = expected;
 
-    }
+    if (expected != set_name_)
+        set_name_ = expected;
 
     auto iwas = static_cast<size_t>(status_);
     auto inew = static_cast<size_t>(new_status);
     auto is_registered = status_registered_[inew];
 
-    if (is_registered != status_registered_[iwas]) {
+    status_ = new_status;
+    updateProperty("RegistrationStatus", ckit_status_[inew]);
+
+   if (is_registered != status_registered_[iwas]) {
         qDebug() << (is_registered ? "Registered" : "Unregistered");
         if (is_registered) {
             if (!modem_) {
@@ -286,9 +288,6 @@ void Bridge::set_status(Status new_status)
             }
         }
     }
-    status_ = new_status;
-    
-    updateProperty("RegistrationStatus", ckit_status_[inew]);
 }
 
 void Bridge::reset_modem()
@@ -327,6 +326,7 @@ void Bridge::process_features(QStringList const &v)
     if (!has_sim_feature) {
         qDebug() << "No sim feature";
         reset_sim();
+        return;
     } else if (!sim_) {
         setup_sim(modem_path_);
     }
