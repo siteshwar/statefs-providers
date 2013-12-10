@@ -11,11 +11,13 @@
 #include <statefs/qt/ns.hpp>
 #include <statefs/qt/dbus.hpp>
 
-#include <map>
 #include <QDBusConnection>
 #include <QString>
 #include <QVariant>
 #include <QObject>
+
+#include <map>
+#include <bitset>
 
 namespace statefs { namespace ofono {
 
@@ -26,6 +28,35 @@ typedef OrgOfonoModemInterface Modem;
 typedef OrgOfonoSimManagerInterface SimManager;
 typedef OrgOfonoSimToolkitInterface SimToolkit;
 using statefs::qt::ServiceWatch;
+
+enum class Interface {
+    AssistedSatelliteNavigation,
+    AudioSettings,
+    CallBarring,
+    CallForwarding,
+    CallMeter,
+    CallSettings,
+    CallVolume,
+    CellBroadcast,
+    Handsfree,
+    LocationReporting,
+    MessageManager,
+    MessageWaiting,
+    NetworkRegistration,
+    Phonebook,
+    PushNotification,
+    RadioSettings,
+    SimManager,
+    SmartMessaging,
+    SimToolkit,
+    SupplementaryServices,
+    TextTelephony,
+    VoiceCallManager,
+
+    EOE
+};
+
+typedef std::bitset<(size_t)Interface::EOE> interfaces_set_type;
 
 class MainNs;
 
@@ -65,10 +96,11 @@ private:
     void reset_network();
     void reset_modem();
     void reset_stk();
-    void process_features(QStringList const&);
+    void process_interfaces(QStringList const&);
     void enumerate_operators();
 
     QDBusConnection &bus_;
+    interfaces_set_type interfaces_;
     std::unique_ptr<Manager> manager_;
     std::unique_ptr<Modem> modem_;
     std::unique_ptr<Network> network_;
