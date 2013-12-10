@@ -465,6 +465,13 @@ void Bridge::setup_network(QString const &path)
     };
 
     network_.reset(new Network(service_name, path, bus_));
+
+    DBG() << "Connect Network::PropertyChanged";
+    connect(network_.get(), &Network::PropertyChanged
+            , [update](QString const &n, QDBusVariant const &v) {
+                update(n, v.variant());
+            });
+
     auto res = sync(network_->GetProperties());
     if (res.isError()) {
         qWarning() << "Network GetProperties error:" << res.error();
@@ -475,15 +482,8 @@ void Bridge::setup_network(QString const &path)
     for (auto it = props.begin(); it != props.end(); ++it)
         update(it.key(), it.value());
 
-    if (!network_) {
+    if (!network_)
         qDebug() << "No network interface";
-        return;
-    }
-    DBG() << "Connect Network::PropertyChanged";
-    connect(network_.get(), &Network::PropertyChanged
-            , [update](QString const &n, QDBusVariant const &v) {
-                update(n, v.variant());
-            });
 }
 
 void Bridge::setup_stk(QString const &path)
