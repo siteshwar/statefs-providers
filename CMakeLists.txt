@@ -24,6 +24,8 @@ set(CMAKE_CXX_FLAGS
   "${CMAKE_CXX_FLAGS} -Wall -O2 -g -feliminate-unused-debug-types -std=c++0x"
   )
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+
 #-Wno-psabi is to remove next g++ warning/note:
 #the mangling of 'va_list' has changed in GCC 4.4
 set(CMAKE_CXX_FLAGS
