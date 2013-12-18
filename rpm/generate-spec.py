@@ -62,6 +62,10 @@ decl_bluez = '''
 Requires: bluez-libs >= 4.0
 '''
 
+decl_bme = '''
+Requires: bme-rm-680-bin >= 0.9.95
+'''
+
 decl_upower = '''
 Requires: upower >= 0.9.18
 '''
@@ -111,6 +115,7 @@ class Actions:
             , "profile" : decl_profile
         }, "default" : {
             "udev" : decl_udev
+            , "bme" : decl_bme
         }
     }
 
@@ -142,6 +147,7 @@ class Actions:
             , "profile" : "profile-info"
         }, "default" : {
             "udev" : "power"
+            , "bme" : "power"
         }, "inout" : {
             "bluetooth" : "bluetooth"
             , "power" : "power"
@@ -165,6 +171,7 @@ class Actions:
             , "profile" : "inout-profile"
         }, "default" : {
             "udev" : [ "upower", "inout-power" ]
+            , "bme" : [ "upower", "inout-power" ]
         }, "inout" : {
             "bluetooth" : "bluez"
             , "power" : [ "upower", "udev" ]
@@ -188,6 +195,7 @@ class Actions:
             , "profile" : ", source - profiled"
         }, "default" : {
             "udev" : ", source - sysfs/udev"
+            , "bme" : ", source - bme"
         }, "inout" : {
             "bluetooth" : ": bluetooth properties"
             , "power" : ": power properties"
@@ -215,7 +223,7 @@ class Actions:
             "system" : "mce"
         }, "ckit" : {
             "bluetooth" : ["bluez", "bluetooth"]
-            , "power" : ["power", "upower"]
+            , "power" : ["power", "upower", "power-bme"]
             , "internet" : "connman"
             , "cellular" : ["cellular", "ofono"]
             , "system" : "mce"
@@ -298,7 +306,7 @@ class Actions:
                   , "keyboard_generic"]
     qt5_user = ["profile"]
 
-    default_system = ["udev"]
+    default_system = ["udev", "bme"]
 
     old_names = { "keyboard_generic" : "keyboard-generic" }
 
