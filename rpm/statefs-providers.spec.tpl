@@ -64,6 +64,7 @@ Requires: statefs-providers-qt5 = %{version}-%{release}
 %{summary}
 
 %define p_bluez -n statefs-provider-bluez
+%define p_bme -n statefs-provider-bme
 %define p_upower -n statefs-provider-upower
 %define p_connman -n statefs-provider-connman
 %define p_ofono -n statefs-provider-ofono

@@ -24,6 +24,8 @@ set(CMAKE_CXX_FLAGS
   "${CMAKE_CXX_FLAGS} -Wall -O2 -g -feliminate-unused-debug-types -std=c++0x"
   )
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+
 #-Wno-psabi is to remove next g++ warning/note:
 #the mangling of 'va_list' has changed in GCC 4.4
 set(CMAKE_CXX_FLAGS
@@ -60,6 +62,7 @@ set(STATEFS_QT_HEADERS ${CMAKE_SOURCE_DIR}/include/statefs/qt/dbus.hpp)
 
 add_subdirectory(src/util)
 add_subdirectory(src/bluez)
+add_subdirectory(src/bme)
 add_subdirectory(src/upower)
 add_subdirectory(src/connman)
 add_subdirectory(src/ofono)

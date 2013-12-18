@@ -64,6 +64,7 @@ Requires: statefs-providers-qt5 = %{version}-%{release}
 %{summary}
 
 %define p_bluez -n statefs-provider-bluez
+%define p_bme -n statefs-provider-bme
 %define p_upower -n statefs-provider-upower
 %define p_connman -n statefs-provider-connman
 %define p_ofono -n statefs-provider-ofono
@@ -118,6 +119,8 @@ Obsoletes: contextkit-plugin-power <= %{ckit_version}
 Provides: contextkit-plugin-power = %{ckit_version1}
 Obsoletes: contextkit-plugin-upower <= %{ckit_version}
 Provides: contextkit-plugin-upower = %{ckit_version1}
+Obsoletes: contextkit-plugin-power-bme <= %{ckit_version}
+Provides: contextkit-plugin-power-bme = %{ckit_version1}
 Provides: statefs-provider-power = %{version}-%{release}
 Conflicts: statefs-provider-udev
 Conflicts: statefs-provider-inout-power
@@ -242,10 +245,35 @@ Obsoletes: contextkit-plugin-power <= %{ckit_version}
 Provides: contextkit-plugin-power = %{ckit_version1}
 Obsoletes: contextkit-plugin-upower <= %{ckit_version}
 Provides: contextkit-plugin-upower = %{ckit_version1}
+Obsoletes: contextkit-plugin-power-bme <= %{ckit_version}
+Provides: contextkit-plugin-power-bme = %{ckit_version1}
 Provides: statefs-provider-power = %{version}-%{release}
 Conflicts: statefs-provider-upower
 Conflicts: statefs-provider-inout-power
 %description -n statefs-provider-udev
+%{summary}
+
+
+
+%package -n statefs-provider-bme
+Summary: Statefs provider, source - bme
+Group: System Environment/Libraries
+Requires(post): /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
+Requires: %{n_common}
+Requires: bme-rm-680-bin >= 0.9.95
+Obsoletes: contextkit-meego-battery-upower <= %{meego_ver}
+Provides: contextkit-meego-battery-upower = %{meego_ver1}
+Obsoletes: contextkit-plugin-power <= %{ckit_version}
+Provides: contextkit-plugin-power = %{ckit_version1}
+Obsoletes: contextkit-plugin-upower <= %{ckit_version}
+Provides: contextkit-plugin-upower = %{ckit_version1}
+Obsoletes: contextkit-plugin-power-bme <= %{ckit_version}
+Provides: contextkit-plugin-power-bme = %{ckit_version1}
+Provides: statefs-provider-power = %{version}-%{release}
+Conflicts: statefs-provider-upower
+Conflicts: statefs-provider-inout-power
+%description -n statefs-provider-bme
 %{summary}
 
 
@@ -279,6 +307,8 @@ Obsoletes: contextkit-plugin-power <= %{ckit_version}
 Provides: contextkit-plugin-power = %{ckit_version1}
 Obsoletes: contextkit-plugin-upower <= %{ckit_version}
 Provides: contextkit-plugin-upower = %{ckit_version1}
+Obsoletes: contextkit-plugin-power-bme <= %{ckit_version}
+Provides: contextkit-plugin-power-bme = %{ckit_version1}
 Provides: statefs-provider-power = %{version}-%{release}
 Conflicts: statefs-provider-upower
 Conflicts: statefs-provider-udev
@@ -407,6 +437,8 @@ make install DESTDIR=%{buildroot}
 pushd inout && make install DESTDIR=%{buildroot} && popd
 
 %statefs_provider_install default udev %{_statefs_libdir}/libprovider-udev.so system
+
+%statefs_provider_install default bme %{_statefs_libdir}/libprovider-bme.so system
 
 
 %statefs_provider_install qt5 bluez %{_statefs_libdir}/libprovider-bluez.so system
@@ -616,6 +648,25 @@ fi
 %statefs_provider_unregister default udev system
 
 %postun %{p_udev}
+/sbin/ldconfig
+%statefs_postun
+
+%files %{p_bme} -f bme.files
+%defattr(-,root,root,-)
+
+%pre %{p_bme}
+%statefs_pre
+
+%post %{p_bme}
+/sbin/ldconfig
+%statefs_provider_register default bme system
+%statefs_post
+
+%preun %{p_bme}
+%statefs_preun
+%statefs_provider_unregister default bme system
+
+%postun %{p_bme}
 /sbin/ldconfig
 %statefs_postun
 
