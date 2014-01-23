@@ -87,9 +87,7 @@ void Bridge::update_all_props()
 bool Bridge::try_get_battery(QString const &path)
 {
     auto is_battery = [](std::unique_ptr<Device> const &p) {
-        return ((DeviceType)p->type() == Battery
-                && p->energyFull() > 0
-                && p->voltage() > 0);
+        return ((DeviceType)p->type() == Battery);
     };
     std::unique_ptr<Device> device(new Device(service_name, path, bus_));
     if (!is_battery(device))
