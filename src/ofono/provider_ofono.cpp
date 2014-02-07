@@ -150,6 +150,10 @@ static const std::map<QString, QString> sim_props_map_ = {
     , { "MobileNetworkCode", "HomeMNC" }
 };
 
+static const std::map<QString, QString> stk_props_map_ = {
+    { "IdleModeText", "StkIdleModeText" }
+};
+
 static Bridge::property_action_type direct_update(QString const &name)
 {
     return [name](Bridge *self, QVariant const &v) {
@@ -318,10 +322,19 @@ void Bridge::reset_network()
     static_cast<MainNs*>(target_)->resetProperties(prop_set);
 }
 
+void Bridge::reset_stk()
+{
+    qDebug() << "Reset sim toolkit properties";
+    stk_.reset();
+    updateProperty("StkIdleModeText", "");
+}
+
 void Bridge::process_features(QStringList const &v)
 {
     auto features = QSet<QString>::fromList(v);
     qDebug() << "Cellular features: " << features;
+    supports_stk_ = features.contains("stk");
+
     bool has_sim_feature = features.contains("sim");
     if (!has_sim_feature) {
         qDebug() << "No sim feature";
@@ -337,6 +350,10 @@ void Bridge::process_features(QStringList const &v)
     } else if (has_net && has_sim_) {
         setup_network(modem_path_);
     }
+    if (supports_stk_ && !stk_)
+        setup_stk(modem_path_);
+    else if (!supports_stk_ && stk_)
+        reset_stk();
 }
 
 bool Bridge::setup_modem(QString const &path, QVariantMap const &props)
@@ -469,6 +486,43 @@ void Bridge::setup_network(QString const &path)
             });
 }
 
+void Bridge::setup_stk(QString const &path)
+{
+    qDebug() << "Get SimToolkit properties";
+    auto update = [this](QString const &n, QVariant const &v) {
+        DBG() << "SimToolkit: prop" << n << "=" << v;
+        if (!has_sim_) {
+            DBG() << "No sim, reset SimToolkit";
+            reset_stk();
+        } else {
+            auto it = stk_props_map_.find(n);
+            if (it != stk_props_map_.end())
+                updateProperty(it->second, v);
+        }
+    };
+
+    stk_.reset(new SimToolkit(service_name, path, bus_));
+    auto res = sync(stk_->GetProperties());
+    if (res.isError()) {
+        qWarning() << "SimToolkit GetProperties error:" << res.error();
+        return;
+    }
+
+    auto props = res.value();
+    for (auto it = props.begin(); it != props.end(); ++it)
+        update(it.key(), it.value());
+
+    if (!stk_) {
+        qDebug() << "No SimToolkit interface";
+        return;
+    }
+    DBG() << "Connect SimToolkit::PropertyChanged";
+    connect(stk_.get(), &SimToolkit::PropertyChanged
+            , [update](QString const &n, QDBusVariant const &v) {
+                update(n, v.variant());
+            });
+}
+
 void Bridge::enumerate_operators()
 {
     if (!network_) {
@@ -515,11 +569,15 @@ void Bridge::setup_sim(QString const &path)
     for (auto it = props.begin(); it != props.end(); ++it)
         update(it.key(), it.value());
 
-    if (sim_)
+    if (sim_) {
         connect(sim_.get(), &SimManager::PropertyChanged
                 , [update](QString const &n, QDBusVariant const &v) {
                     update(n, v.variant());
                 });
+
+        if (supports_stk_)
+            setup_stk(modem_path_);
+    }
 }
 
 void MainNs::resetProperties(MainNs::Properties what)
@@ -551,6 +609,7 @@ MainNs::MainNs(QDBusConnection &bus)
             , { "CurrentMNC", "0"}
             , { "HomeMCC", "0"}
             , { "HomeMNC", "0"}
+            , { "StkIdleModeText", ""}
         })
 {
     for (auto v : defaults_)
