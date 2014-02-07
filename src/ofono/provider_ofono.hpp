@@ -4,6 +4,7 @@
 #include "manager_interface.h"
 #include "net_interface.h"
 #include "sim_interface.h"
+#include "stk_interface.h"
 
 #include <statefs/provider.hpp>
 #include <statefs/property.hpp>
@@ -23,6 +24,7 @@ typedef OrgOfonoNetworkRegistrationInterface Network;
 typedef OrgOfonoNetworkOperatorInterface Operator;
 typedef OrgOfonoModemInterface Modem;
 typedef OrgOfonoSimManagerInterface SimManager;
+typedef OrgOfonoSimToolkitInterface SimToolkit;
 using statefs::qt::ServiceWatch;
 
 class MainNs;
@@ -58,9 +60,11 @@ private:
     bool setup_operator(QString const &, QVariantMap const&);
     void setup_sim(QString const &);
     void setup_network(QString const &);
+    void setup_stk(QString const &);
     void reset_sim();
     void reset_network();
     void reset_modem();
+    void reset_stk();
     void process_features(QStringList const&);
     void enumerate_operators();
 
@@ -70,9 +74,11 @@ private:
     std::unique_ptr<Network> network_;
     std::unique_ptr<Operator> operator_;
     std::unique_ptr<SimManager> sim_;
+    std::unique_ptr<SimToolkit> stk_;
     ServiceWatch watch_;
 
     bool has_sim_;
+    bool supports_stk_;
     Status status_;
     std::pair<QString, QString> network_name_;
     void (Bridge::*set_name_)();
