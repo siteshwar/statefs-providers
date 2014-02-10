@@ -1,0 +1,5 @@
+To change package versions and add packages edit generate-spec.py and
+.tpl files.
+
+DO NOT edit .spec files directly. To generate .spec files just run
+./generate-spec.py in this directory (it needs python).

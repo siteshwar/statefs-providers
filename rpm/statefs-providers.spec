@@ -260,7 +260,7 @@ Summary: Statefs provider, source - bme
 Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
-Requires: %{n_common}
+Requires: %{n_common} = %{version}-%{release}
 Requires: bme-rm-680-bin >= 0.9.95
 Obsoletes: contextkit-meego-battery-upower <= %{meego_ver}
 Provides: contextkit-meego-battery-upower = %{meego_ver1}

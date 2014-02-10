@@ -52,7 +52,7 @@ Obsoletes: contextkit-meego <= %{meego_ver}
 Provides: contextkit-meego = %{meego_ver1}
 Obsoletes: statefs-contextkit-provider <= %{ckit_statefs_version}
 Provides: statefs-contextkit-provider = %{ckit_statefs_version1}
-BuildRequires: pkgconfig(statefs-qt5) >= 0.2.33
+BuildRequires: pkgconfig(statefs-qt5) >= 0.2.42
 %description %{p_common}
 %{summary}
 
