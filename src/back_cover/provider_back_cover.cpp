@@ -24,7 +24,6 @@
 
 #include <statefs/provider.hpp>
 #include <statefs/property.hpp>
-#include <algorithm>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
