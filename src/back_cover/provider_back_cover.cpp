@@ -180,7 +180,15 @@ int BackCoverMonitor::findDevice()
 
     while ((entry = readdir(d)) != NULL) {
         std::stringstream s;
-        s << DEV_DIR << entry->d_name;
+
+        try {
+            s << DEV_DIR << entry->d_name;
+        }
+        catch (...) {
+            closedir(d);
+            throw;
+        }
+
         int fd = open(s.str().c_str(), O_RDONLY);
         if (fd == -1) {
             std::cerr << "Failed to check " << entry->d_name << std::endl;
