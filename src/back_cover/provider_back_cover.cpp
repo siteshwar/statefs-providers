@@ -261,11 +261,6 @@ void BackCoverMonitor::readValue()
 
 void BackCoverMonitor::disconnect()
 {
-    // Close fd
-    int fd = m_fd;
-    m_fd = -1;
-    close(fd);
-
     // join
     if (pthread_cancel(m_thread) == 0) {
         pthread_join(m_thread, NULL);
@@ -274,6 +269,10 @@ void BackCoverMonitor::disconnect()
        // I really don't know what to do if cancellation fails
         pthread_kill(m_thread, SIGKILL);
     }
+
+    // Close fd
+    close(m_fd);
+    m_fd = -1;
 
     m_slot = 0;
     pthread_mutex_destroy(&m_mutex);
