@@ -24,6 +24,7 @@
 
 #include <statefs/provider.hpp>
 #include <statefs/property.hpp>
+#include <thread>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -85,14 +86,14 @@ private:
     bool isBackCover(int fd);
     void readValue();
 
-    static void *run_thread(void *arg);
+    static void run_thread(BackCoverMonitor& that);
 
     statefs::AProperty *m_parent;
     statefs_slot *m_slot;
     int m_fd;
     int m_val;
-    pthread_mutex_t m_mutex;
-    pthread_t m_thread;
+    std::thread m_thread;
+    std::mutex m_mutex;
 };
 
 Provider::Provider(struct statefs_server *server)
@@ -220,15 +221,9 @@ ssize_t BackCoverMonitor::size() const
 
 bool BackCoverMonitor::connect(statefs_slot *slot)
 {
-    if (pthread_mutex_init(&m_mutex, NULL) != 0) {
-        std::cerr << "Failed to initialize mutex";
-        return false;
-    }
-
     // Let's find our device:
     int fd = findDevice();
     if (fd == -1) {
-        pthread_mutex_destroy(&m_mutex);
         return false;
     }
 
@@ -239,13 +234,12 @@ bool BackCoverMonitor::connect(statefs_slot *slot)
     readValue();
 
     // Start monitor
-    if (pthread_create(&m_thread, NULL, run_thread, this) != 0) {
-        std::cerr << "Failed to create thread" << std::endl;
-
-        pthread_mutex_destroy(&m_mutex);
+    try {
+        m_thread = std::thread(run_thread, std::ref(*this));
+    }
+    catch (...) {
         close(m_fd);
-        m_fd = -1;
-        return false;
+        throw;
     }
 
     return true;
@@ -267,9 +261,16 @@ void BackCoverMonitor::readValue()
 
 void BackCoverMonitor::disconnect()
 {
-    // join
-    if (pthread_cancel(m_thread) == 0) {
-        pthread_join(m_thread, NULL);
+    // Cancel thread.
+    pthread_cancel(m_thread.native_handle());
+
+    // Join
+    try {
+        m_thread.join();
+    }
+    catch (...) {
+        close(m_fd);
+        throw;
     }
 
     // Close fd
@@ -277,7 +278,6 @@ void BackCoverMonitor::disconnect()
     m_fd = -1;
 
     m_slot = 0;
-    pthread_mutex_destroy(&m_mutex);
 }
 
 int BackCoverMonitor::read(std::string *h, char *dst, size_t len, off_t off)
@@ -286,11 +286,12 @@ int BackCoverMonitor::read(std::string *h, char *dst, size_t len, off_t off)
         return -1;
     }
 
-    pthread_mutex_lock(&m_mutex);
+    m_mutex.lock();
+//    std::lock_guard<std::mutex> locker(m_mutex);
+
     // Hex values for 1 and 0
     dst[0] = m_val ? 0x31 : 0x30;
-    pthread_mutex_unlock(&m_mutex);
-
+    m_mutex.unlock();
     return 1;
 }
 
@@ -304,29 +305,28 @@ void BackCoverMonitor::release()
     // Nothing.
 }
 
-void *BackCoverMonitor::run_thread(void *arg)
+void BackCoverMonitor::run_thread(BackCoverMonitor& that)
 {
-    BackCoverMonitor *that = (BackCoverMonitor *)arg;
     struct input_event buf;
 
     while (true) {
-        if (that->m_fd == -1) {
-            return NULL;
+        if (that.m_fd == -1) {
+            return;
         }
 
-        int rc = ::read(that->m_fd, &buf, sizeof(buf));
-        if (that->m_fd == -1) {
-            return NULL;
+        int rc = ::read(that.m_fd, &buf, sizeof(buf));
+        if (that.m_fd == -1) {
+            return;
         }
         else if (rc == -1) {
             if (errno == EAGAIN || errno == EINTR) {
                 continue;
             }
 
-            return NULL;
+            return;
         }
         else if (rc == 0) {
-            return NULL;
+            return;
         }
         else if (rc % sizeof(buf)) {
             std::cerr << "read returned " << rc << " bytes!" << std::endl;
@@ -334,21 +334,19 @@ void *BackCoverMonitor::run_thread(void *arg)
         }
         else {
             if (buf.type == EV_SW && buf.code == SW_DOCK) {
-                pthread_mutex_lock(&that->m_mutex);
-                if (that->m_val == buf.value) {
-                    pthread_mutex_unlock(&that->m_mutex);
+                that.m_mutex.lock();
+                if (that.m_val == buf.value) {
+                    that.m_mutex.unlock();
                     continue;
                 }
                 else {
-                    that->m_val = buf.value;
-                    pthread_mutex_unlock(&that->m_mutex);
-                    that->m_slot->on_changed(that->m_slot, that->m_parent);
+                    that.m_val = buf.value;
+                    that.m_mutex.unlock();
+                    that.m_slot->on_changed(that.m_slot, that.m_parent);
                 }
             }
         }
     }
-
-    return NULL;
 }
 
 EXTERN_C struct statefs_provider * statefs_provider_get(struct statefs_server *p)
