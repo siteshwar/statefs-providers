@@ -30,7 +30,6 @@
 #include <dirent.h>
 #include <sys/ioctl.h>
 #include <linux/input.h>
-#include <signal.h>
 
 #define DEV_DIR "/dev/input/"
 #define TOH_NAME "toh-event"
@@ -271,10 +270,6 @@ void BackCoverMonitor::disconnect()
     // join
     if (pthread_cancel(m_thread) == 0) {
         pthread_join(m_thread, NULL);
-    }
-    else {
-       // I really don't know what to do if cancellation fails
-        pthread_kill(m_thread, SIGKILL);
     }
 
     // Close fd
