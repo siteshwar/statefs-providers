@@ -286,12 +286,11 @@ int BackCoverMonitor::read(std::string *h, char *dst, size_t len, off_t off)
         return -1;
     }
 
-    m_mutex.lock();
-//    std::lock_guard<std::mutex> locker(m_mutex);
+    std::lock_guard<std::mutex> locker(m_mutex);
 
     // Hex values for 1 and 0
     dst[0] = m_val ? 0x31 : 0x30;
-    m_mutex.unlock();
+
     return 1;
 }
 
