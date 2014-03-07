@@ -3,6 +3,7 @@
 
 #include "manager_interface.h"
 #include "service_interface.h"
+#include "technology_interface.h"
 
 #include <statefs/provider.hpp>
 #include <statefs/property.hpp>
@@ -10,6 +11,7 @@
 #include <statefs/qt/dbus.hpp>
 
 #include <map>
+#include <set>
 #include <QDBusConnection>
 #include <QString>
 #include <QVariant>
@@ -19,9 +21,12 @@ namespace statefs { namespace connman {
 
 typedef NetConnmanManagerInterface Manager;
 typedef NetConnmanServiceInterface Service;
+typedef NetConnmanTechnologyInterface Technology;
 using statefs::qt::ServiceWatch;
 
 class InternetNs;
+
+enum class Status { Offline, Online, EOE };
 
 class Bridge : public QObject, public statefs::qt::PropertiesSource
 {
@@ -35,40 +40,26 @@ public:
 
 private:
 
-    enum Status {
-        ExactMatch,
-        Match,
-        Ignore
-    };
-
-    enum Order {
-        WiFi,
-        Cellular,
-        Other,
-
-        OrderEnd
-    };
-
     void process_manager_props(QVariantMap const&);
-    Status process_technology(QString const&, QVariantMap const&);
-    Status process_services();
+    void process_technology(QString const&, QVariantMap const&);
+    void process_services();
     void process_technologies();
     Status process_service(QString const&, QVariantMap const &);
-    Order service_order(QVariantMap const &);
     void reset_manager();
     void reset_properties();
-    Order get_order(QString const&);
 
     QDBusConnection &bus_;
     std::unique_ptr<ServiceWatch> watch_;
     std::unique_ptr<Manager> manager_;
     std::unique_ptr<Service> service_;
+    std::map<QString, std::unique_ptr<Technology> > technologies_;
 
-    Order current_net_order_;
-    QString current_technology_;
     QString current_service_;
     std::map<QString, QString> net_type_map_;
-    std::map<QString, QString> state_map_;
+    std::map<QString, Status> state_map_;
+    std::vector<QString> states_;
+
+    QSet<QString> tethering_;
 };
 
 class InternetNs : public statefs::qt::Namespace

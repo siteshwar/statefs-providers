@@ -196,6 +196,7 @@ class Actions:
         }, "default" : {
             "udev" : ", source - sysfs/udev"
             , "bme" : ", source - bme"
+            , "back_cover" : ", source - back_cover"
         }, "inout" : {
             "bluetooth" : ": bluetooth properties"
             , "power" : ": power properties"
@@ -236,12 +237,16 @@ class Actions:
 
     def generic_name(self, pk_type, name):
         src = Actions.provides[pk_type]
-        res = src[name]
+        res = src.get(name, name)
         return res if type(res) == str else res[0]
 
     def get_provides(self, pk_type, name):
         src = Actions.provides[pk_type]
-        res = src[name]
+        res = src.get(name, None)
+        if res is None:
+            print name, " !providers"
+            return res
+
         if type(res) == str:
             res = [res]
         fmt = "Provides: statefs-provider-{} = %{{version}}-%{{release}}"
@@ -293,20 +298,24 @@ class Actions:
         old_types = Actions.old_formats.keys()
         obsoletes = itertools.chain(*[self.get_obsoletes(pk_type, t, name)
                                       for t in old_types])
-        return Actions.templates[pk_type].format(
+        res = Actions.templates[pk_type].format(
             name = self.package_name(pk_type, name),
             summary = self.get_summary(pk_type, name),
             obsoletes = '\n'.join(list(obsoletes)),
             conflicts = '\n'.join(self.get_conflicts(pk_type, name)),
             extra = '\n'.join(self.get_extra(pk_type, name)),
-            provides = '\n'.join(self.get_provides(pk_type, name))
+            provides = '\n'.join(self.get_provides(pk_type, name) or [])
         )
+        
+        res = [x for x in res.split('\n') if x]
+        res.append("\n")
+        return '\n'.join(res)
 
     qt5_system = ["bluez", "upower", "connman", "ofono", "mce"
                   , "keyboard_generic"]
     qt5_user = ["profile"]
 
-    default_system = ["udev", "bme"]
+    default_system = ["udev", "bme", "back_cover"]
 
     old_names = { "keyboard_generic" : "keyboard-generic" }
 

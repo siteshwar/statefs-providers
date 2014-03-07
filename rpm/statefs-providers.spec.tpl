@@ -73,6 +73,7 @@ Requires: statefs-providers-qt5 = %{version}-%{release}
 %define p_keyboard_generic -n statefs-provider-keyboard-generic
 
 %define p_udev -n statefs-provider-udev
+%define p_back_cover -n statefs-provider-back-cover
 
 %define p_inout_bluetooth -n statefs-provider-inout-bluetooth
 %define p_inout_power -n statefs-provider-inout-power

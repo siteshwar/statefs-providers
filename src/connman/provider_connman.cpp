@@ -40,7 +40,6 @@ Bridge::Bridge(InternetNs *ns, QDBusConnection &bus)
     : PropertiesSource(ns)
     , bus_(bus)
     , watch_(new ServiceWatch(bus, service_name))
-    , current_net_order_(OrderEnd)
     , net_type_map_{
     {"wifi", "WLAN"}
     , {"gprs", "GPRS"}
@@ -49,10 +48,11 @@ Bridge::Bridge(InternetNs *ns, QDBusConnection &bus)
     , {"umts", "GPRS"}
     , {"ethernet", "ethernet"}}
     , state_map_{
-        {"offline", "disconnected"}
-        , {"idle", "disconnected"}
-        , {"online", "connected"}
-        , {"ready", "connected"}}
+        {"offline", Status::Offline}
+        , {"idle", Status::Offline}
+        , {"online", Status::Online}
+        , {"ready", Status::Online}}
+    , states_{"disconnected", "connected"}
 {
 }
 
@@ -61,39 +61,47 @@ void Bridge::process_manager_props(QVariantMap const &props)
 
     auto update = [this](QString const &n, QVariant const &v) {
         if (n == "State") {
-            if (state_map_[v.toString()] == "connected")
+            auto state = v.toString();
+            qDebug() << "Network manager is " << state;
+            if (state_map_[state] == Status::Online) {
+                process_services();
                 process_technologies();
-            else
+            } else {
                 reset_properties();
+            }
         }
     };
     connect(manager_.get(), &Manager::PropertyChanged
             , [update] (QString const &n, QDBusVariant const &v) {
+                qDebug() << "Manager property " << n;
                 update(n, v.variant());
             });
-
-    for (auto it = props.begin(); it != props.end(); ++it)
-        update(it.key(), it.value());
-
     connect(manager_.get(), &Manager::TechnologyAdded
             , [this] (const QDBusObjectPath &path, const QVariantMap &props) {
+                qDebug() << "Technology added " << path.path();
                 process_technology(path.path(), props);
             });
     connect(manager_.get(), &Manager::TechnologyRemoved
             , [this] (const QDBusObjectPath &path) {
-                if (path.path() == current_technology_)
-                    process_technologies();
+                qDebug() << "Technology removed " << path.path();
+                process_technologies();
             });
     connect(manager_.get(), &Manager::ServicesAdded
             , [this] (PathPropertiesArray const &info) {
+                qDebug() << "Services added";
                 process_services();
             });
     connect(manager_.get(), &Manager::ServicesRemoved
             , [this] (const QList<QDBusObjectPath> &data) {
+                qDebug() << "Services removed";
                 auto services = QSet<QDBusObjectPath>::fromList(data);
-                if (services.contains(QDBusObjectPath(current_service_)))
-                    process_technologies();
+                if (services.contains(QDBusObjectPath(current_service_))) {
+                    process_services();
+                }
             });
+
+    for (auto it = props.begin(); it != props.end(); ++it)
+        update(it.key(), it.value());
 }
 
 void Bridge::init()
@@ -116,13 +124,6 @@ void Bridge::reset_properties()
     static_cast<InternetNs*>(target_)->reset_properties();
 }
 
-Bridge::Order Bridge::get_order(QString const &net_type)
-{
-    return (net_type == "wifi"
-            ? WiFi : (net_type == "cellular"
-                      ? Cellular : Other));
-}
-
 void Bridge::reset_manager()
 {
     qDebug() << "Connman is unregistered, cleaning up";
@@ -132,124 +133,133 @@ void Bridge::reset_manager()
 
 void Bridge::process_technologies()
 {
-    current_net_order_ = OrderEnd;
-    current_technology_ = "";
-    current_service_ = "";
-    service_.reset();
-
+    technologies_.clear();
     auto process_props = [this](PathPropertiesArray const &techs) {
         for (auto pp = techs.begin(); pp != techs.end(); ++pp) {
             auto const &path = std::get<0>(*pp).path();
             auto const &props = std::get<1>(*pp);
             process_technology(path, props);
         }
-        if (current_net_order_ == OrderEnd)
-            reset_properties();
     };
-
     sync(manager_->GetTechnologies(), process_props);
-    if (current_service_ == "")
-        process_services();
 }
 
-Bridge::Status Bridge::process_service
+Status Bridge::process_service
 (QString const &path, QVariantMap const &props)
 {
-    auto order = service_order(props);
+    auto get_status = [this](QVariant const &state) {
+        return state_map_[state.toString()];
+    };
 
-    if (order > current_net_order_)
-        return Ignore;
+    auto status = get_status(props["State"]);
 
-    qDebug() << "Service " << props["Name"].toString() << " is online";
+    qDebug() << "Service " << props["Name"].toString() << " is "
+             << (status == Status::Online ? "online" : "offline");
 
-    current_net_order_ = order;
+    if (status == Status::Offline)
+        return status;
+
     current_service_ = path;
 
-    auto update = [this](QString const &n, QVariant const &v) {
+    auto update_status = [this, path, get_status](QVariant const &v) {
+        qDebug() << path << " status ->" << v.toString();
+        auto status = get_status(v);
+        auto name = states_[static_cast<size_t>(status)];
+        updateProperty("NetworkState", name);
+    };
+
+    auto update = [this, update_status](QString const &n, QVariant const &v) {
+        // qDebug() << "Changed: " << n << " for " << path;
         if (n == "Name") {
             updateProperty("NetworkName", v);
         } else if (n == "Strength") {
             updateProperty("SignalStrength", v.toUInt());
         } else if (n == "State") {
-            auto state = state_map_[v.toString()];
-            if (state != "connected")
-                process_technologies();
+            update_status(v);
+            process_services();
         } else if (n == "Type") {
             updateProperty("NetworkType", net_type_map_[v.toString()]);
         }
     };
 
-    for (QString n : {"Name", "Strength", "State", "Type"})
+    for (QString n : {"Name", "Strength", "Type"})
         update(n, props[n]);
 
-    service_.reset(new Service(service_name, path, bus_));
+    update_status(props["State"]);
 
+    service_.reset(new Service(service_name, path, bus_));
     connect(service_.get(), &Service::PropertyChanged
             , [update](QString const &n, QDBusVariant const&v) {
                 update(n, v.variant());
             });
-    return Match;
-}
-
-Bridge::Order Bridge::service_order(QVariantMap const &props)
-{
-    auto service_type = props["Type"].toString();
-    auto state = state_map_[props["State"].toString()];
-    auto order = get_order(service_type);
-
-    return (state == "connected") ? order : OrderEnd;
-}
-
-Bridge::Status Bridge::process_services()
-{
-    Status status = Ignore;
-    auto process = [this, &status]
-        (PathPropertiesArray const &services) {
-
-        QString chosen_path;
-        QVariantMap const *chosen_props;
-        Order chosen_order = OrderEnd;
-
-        for (auto pp = services.begin(); pp != services.end(); ++pp) {
-            auto const &path = std::get<0>(*pp).path();
-            auto const &props = std::get<1>(*pp);
-            auto order = service_order(props);
-            if (order < chosen_order) {
-                chosen_path = path;
-                chosen_props = &props;
-                chosen_order = order;
-            }
-        }
-        if (chosen_order != OrderEnd)
-            status = process_service(chosen_path, *chosen_props);
-    };
-    sync(manager_->GetServices(), process);
     return status;
 }
 
-Bridge::Status Bridge::process_technology(QString const &path
-                                          , QVariantMap const &props)
+void Bridge::process_services()
+{
+    current_service_ = "";
+    service_.reset();
+
+    auto process = [this](PathPropertiesArray const &services) {
+
+        if (services.begin() == services.end()) {
+            qDebug() << "No services";
+            reset_properties();
+        } else {
+            for (auto pp = services.begin(); pp != services.end(); ++pp) {
+                auto const &path = std::get<0>(*pp).path();
+                auto const &props = std::get<1>(*pp);
+                // first connection provided by connman according to
+                // connman docs is default, so monitor only it if it
+                // is online
+                if (process_service(path, props) == Status::Online)
+                    break;
+            }
+        }
+    };
+    sync(manager_->GetServices(), process);
+}
+
+void Bridge::process_technology(QString const &path
+                                , QVariantMap const &props)
 {
     auto net_type = props["Type"].toString();
-    auto is_connected = props["Connected"].toBool();
 
-    if (!is_connected)
-        return Ignore;
+    auto update_tethering = [this, net_type](QVariant const &v) {
+        // TODO handle potential cases if there is more than one tech
+        // of one type
+        if (v.toBool())
+            tethering_.insert(net_type);
+        else
+            tethering_.remove(net_type);
 
-    auto order = get_order(net_type);
-    if (order > current_net_order_)
-        return Ignore;
+        auto len = tethering_.size();
+        QString teth_str;
+        if (!len) {
+            teth_str = "";
+        } else if (len == 1) {
+            teth_str = *tethering_.begin();
+        } else {
+            QStringList values(QStringList::fromSet(tethering_));
+            teth_str = values.join("\n");
+        }
+        updateProperty("Tethering", teth_str);
+        qDebug() << "Technology (type=" << net_type << ") tethering is " << teth_str;
+    };
 
-    qDebug() << "Technology (type=" << net_type << ") is online";
-    updateProperty("NetworkType", net_type_map_[net_type]);
-    updateProperty("NetworkState", "connected");
-    updateProperty("Tethering", props["Tethering"]);
+    auto update = [update_tethering](QString const &n, QVariant const &v) {
+        if (n == "Tethering")
+            update_tethering(v);
+    };
 
-    current_net_order_ = order;
-    current_technology_ = path;
+    update_tethering(props["Tethering"]);
+    auto tech = cor::make_unique<Technology>(service_name, path, bus_);
+    connect(tech.get(), &Technology::PropertyChanged
+            , [update](QString const &n, QDBusVariant const&v) {
+                update(n, v.variant());
+            });
 
-    auto status = process_services();
-    return (order == WiFi || order == Cellular) ? status : Match;
+    technologies_.insert(std::make_pair(path, std::move(tech)));
 }
 
 InternetNs::InternetNs(QDBusConnection &bus)
@@ -259,7 +269,7 @@ InternetNs::InternetNs(QDBusConnection &bus)
             , {"NetworkState", "disconnected"}
             , {"NetworkName", ""}
             , {"SignalStrength", "0"}
-            , {"Tethering", "0"}})
+            , {"Tethering", ""}})
 {
     addProperty("NetworkType", "");
     addProperty("NetworkState", "disconnected");
@@ -267,7 +277,7 @@ InternetNs::InternetNs(QDBusConnection &bus)
     addProperty("TrafficIn", "0");
     addProperty("TrafficOut", "0");
     addProperty("SignalStrength", "0");
-    addProperty("Tethering", "0");
+    addProperty("Tethering", "");
     src_->init();
 }
 

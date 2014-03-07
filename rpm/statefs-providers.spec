@@ -73,6 +73,7 @@ Requires: statefs-providers-qt5 = %{version}-%{release}
 %define p_keyboard_generic -n statefs-provider-keyboard-generic
 
 %define p_udev -n statefs-provider-udev
+%define p_back_cover -n statefs-provider-back-cover
 
 %define p_inout_bluetooth -n statefs-provider-inout-bluetooth
 %define p_inout_power -n statefs-provider-inout-power
@@ -82,7 +83,6 @@ Requires: statefs-providers-qt5 = %{version}-%{release}
 %define p_inout_profile -n statefs-provider-inout-profile
 %define p_inout_keyboard -n statefs-provider-inout-keyboard
 %define p_inout_location -n statefs-provider-inout-location
-
 
 %package -n statefs-provider-bluez
 Summary: Statefs provider, source - bluez
@@ -102,7 +102,6 @@ Provides: statefs-provider-bluetooth = %{version}-%{release}
 Conflicts: statefs-provider-inout-bluetooth
 %description -n statefs-provider-bluez
 %{summary}
-
 
 
 %package -n statefs-provider-upower
@@ -128,7 +127,6 @@ Conflicts: statefs-provider-inout-power
 %{summary}
 
 
-
 %package -n statefs-provider-connman
 Summary: Statefs provider, source - connman
 Group: System Environment/Libraries
@@ -146,7 +144,6 @@ Provides: statefs-provider-network = %{version}-%{release}
 Conflicts: statefs-provider-inout-network
 %description -n statefs-provider-connman
 %{summary}
-
 
 
 %package -n statefs-provider-ofono
@@ -171,7 +168,6 @@ Conflicts: statefs-provider-inout-cellular
 %{summary}
 
 
-
 %package -n statefs-provider-mce
 Summary: Statefs provider, source - mce
 Group: System Environment/Libraries
@@ -192,7 +188,6 @@ Conflicts: statefs-provider-inout-mode-control
 %{summary}
 
 
-
 %package -n statefs-provider-keyboard-generic
 Summary: Statefs provider, source - sysfs/udev
 Group: System Environment/Libraries
@@ -207,7 +202,6 @@ Provides: statefs-provider-keyboard = %{version}-%{release}
 Conflicts: statefs-provider-inout-keyboard
 %description -n statefs-provider-keyboard-generic
 %{summary}
-
 
 
 %package -n statefs-provider-profile
@@ -226,7 +220,6 @@ Provides: statefs-provider-profile-info = %{version}-%{release}
 Conflicts: statefs-provider-inout-profile
 %description -n statefs-provider-profile
 %{summary}
-
 
 
 %package -n statefs-provider-udev
@@ -254,7 +247,6 @@ Conflicts: statefs-provider-inout-power
 %{summary}
 
 
-
 %package -n statefs-provider-bme
 Summary: Statefs provider, source - bme
 Group: System Environment/Libraries
@@ -277,12 +269,20 @@ Conflicts: statefs-provider-inout-power
 %{summary}
 
 
+%package -n statefs-provider-back-cover
+Summary: Statefs provider, source - back_cover
+Group: System Environment/Libraries
+Requires(post): /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
+Requires: %{n_common} = %{version}-%{release}
+%description -n statefs-provider-back-cover
+%{summary}
+
 
 %package -n statefs-provider-inout-bluetooth
 Summary: Statefs inout provider: bluetooth properties
 Group: System Environment/Libraries
 Requires: statefs >= %{statefs_ver}
-
 Obsoletes: contextkit-meego-bluetooth <= %{meego_ver}
 Provides: contextkit-meego-bluetooth = %{meego_ver1}
 Obsoletes: contextkit-plugin-bluez <= %{ckit_version}
@@ -300,7 +300,6 @@ BuildArch: noarch
 Summary: Statefs inout provider: power properties
 Group: System Environment/Libraries
 Requires: statefs >= %{statefs_ver}
-
 Obsoletes: contextkit-meego-battery-upower <= %{meego_ver}
 Provides: contextkit-meego-battery-upower = %{meego_ver1}
 Obsoletes: contextkit-plugin-power <= %{ckit_version}
@@ -321,7 +320,6 @@ BuildArch: noarch
 Summary: Statefs inout provider: network properties
 Group: System Environment/Libraries
 Requires: statefs >= %{statefs_ver}
-
 Obsoletes: contextkit-meego-internet <= %{meego_ver}
 Provides: contextkit-meego-internet = %{meego_ver1}
 Obsoletes: contextkit-plugin-connman <= %{ckit_version}
@@ -338,7 +336,6 @@ BuildArch: noarch
 Summary: Statefs inout provider: cellular properties
 Group: System Environment/Libraries
 Requires: statefs >= %{statefs_ver}
-
 Obsoletes: contextkit-meego-cellular <= %{meego_ver}
 Provides: contextkit-meego-cellular = %{meego_ver1}
 Obsoletes: contextkit-meego-phone <= %{meego_ver}
@@ -358,7 +355,6 @@ BuildArch: noarch
 Summary: Statefs inout provider: system properties
 Group: System Environment/Libraries
 Requires: statefs >= %{statefs_ver}
-
 Obsoletes: contextkit-maemo-mce <= %{maemo_ver}
 Provides: contextkit-maemo-mce = %{maemo_ver1}
 Obsoletes: contextkit-plugin-mce <= %{ckit_version}
@@ -374,7 +370,6 @@ BuildArch: noarch
 Summary: Statefs inout provider: keyboard properties
 Group: System Environment/Libraries
 Requires: statefs >= %{statefs_ver}
-
 Obsoletes: contextkit-plugin-keyboard-generic <= %{ckit_version}
 Provides: contextkit-plugin-keyboard-generic = %{ckit_version1}
 Provides: statefs-provider-keyboard = %{version}-%{release}
@@ -388,7 +383,6 @@ BuildArch: noarch
 Summary: Statefs inout provider: location properties
 Group: System Environment/Libraries
 Requires: statefs >= %{statefs_ver}
-
 Obsoletes: contextkit-meego-location-geoclue <= %{meego_ver}
 Provides: contextkit-meego-location-geoclue = %{meego_ver1}
 Obsoletes: contextkit-meego-location-skyhook <= %{meego_ver}
@@ -410,7 +404,6 @@ BuildArch: noarch
 Summary: Statefs inout provider: profile properties
 Group: System Environment/Libraries
 Requires: statefs >= %{statefs_ver}
-
 Obsoletes: contextkit-plugin-profile <= %{ckit_version}
 Provides: contextkit-plugin-profile = %{ckit_version1}
 Provides: statefs-provider-profile-info = %{version}-%{release}
@@ -418,6 +411,7 @@ Conflicts: statefs-provider-profile
 BuildArch: noarch
 %description -n statefs-provider-inout-profile
 %{summary}
+
 
 
 %prep
@@ -439,6 +433,8 @@ pushd inout && make install DESTDIR=%{buildroot} && popd
 %statefs_provider_install default udev %{_statefs_libdir}/libprovider-udev.so system
 
 %statefs_provider_install default bme %{_statefs_libdir}/libprovider-bme.so system
+
+%statefs_provider_install default back_cover %{_statefs_libdir}/libprovider-back_cover.so system
 
 
 %statefs_provider_install qt5 bluez %{_statefs_libdir}/libprovider-bluez.so system
@@ -667,6 +663,25 @@ fi
 %statefs_provider_unregister default bme system
 
 %postun %{p_bme}
+/sbin/ldconfig
+%statefs_postun
+
+%files %{p_back_cover} -f back_cover.files
+%defattr(-,root,root,-)
+
+%pre %{p_back_cover}
+%statefs_pre
+
+%post %{p_back_cover}
+/sbin/ldconfig
+%statefs_provider_register default back_cover system
+%statefs_post
+
+%preun %{p_back_cover}
+%statefs_preun
+%statefs_provider_unregister default back_cover system
+
+%postun %{p_back_cover}
 /sbin/ldconfig
 %statefs_postun
 
