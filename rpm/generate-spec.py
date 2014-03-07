@@ -298,7 +298,7 @@ class Actions:
         old_types = Actions.old_formats.keys()
         obsoletes = itertools.chain(*[self.get_obsoletes(pk_type, t, name)
                                       for t in old_types])
-        return Actions.templates[pk_type].format(
+        res = Actions.templates[pk_type].format(
             name = self.package_name(pk_type, name),
             summary = self.get_summary(pk_type, name),
             obsoletes = '\n'.join(list(obsoletes)),
@@ -306,6 +306,10 @@ class Actions:
             extra = '\n'.join(self.get_extra(pk_type, name)),
             provides = '\n'.join(self.get_provides(pk_type, name) or [])
         )
+        
+        res = [x for x in res.split('\n') if x]
+        res.append("\n")
+        return '\n'.join(res)
 
     qt5_system = ["bluez", "upower", "connman", "ofono", "mce"
                   , "keyboard_generic"]
