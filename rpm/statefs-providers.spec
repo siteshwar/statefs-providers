@@ -278,6 +278,21 @@ Conflicts: statefs-provider-inout-power
 
 
 
+%package -n statefs-provider-back-cover
+Summary: Statefs provider, source - back_cover
+Group: System Environment/Libraries
+Requires(post): /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
+Requires: %{n_common} = %{version}-%{release}
+
+
+
+
+%description -n statefs-provider-back-cover
+%{summary}
+
+
+
 %package -n statefs-provider-inout-bluetooth
 Summary: Statefs inout provider: bluetooth properties
 Group: System Environment/Libraries
@@ -439,6 +454,8 @@ pushd inout && make install DESTDIR=%{buildroot} && popd
 %statefs_provider_install default udev %{_statefs_libdir}/libprovider-udev.so system
 
 %statefs_provider_install default bme %{_statefs_libdir}/libprovider-bme.so system
+
+%statefs_provider_install default back_cover %{_statefs_libdir}/libprovider-back_cover.so system
 
 
 %statefs_provider_install qt5 bluez %{_statefs_libdir}/libprovider-bluez.so system
@@ -667,6 +684,25 @@ fi
 %statefs_provider_unregister default bme system
 
 %postun %{p_bme}
+/sbin/ldconfig
+%statefs_postun
+
+%files %{p_back_cover} -f back_cover.files
+%defattr(-,root,root,-)
+
+%pre %{p_back_cover}
+%statefs_pre
+
+%post %{p_back_cover}
+/sbin/ldconfig
+%statefs_provider_register default back_cover system
+%statefs_post
+
+%preun %{p_back_cover}
+%statefs_preun
+%statefs_provider_unregister default back_cover system
+
+%postun %{p_back_cover}
 /sbin/ldconfig
 %statefs_postun
 
