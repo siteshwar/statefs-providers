@@ -3,6 +3,7 @@
 
 #include "manager_interface.h"
 #include "service_interface.h"
+#include "technology_interface.h"
 
 #include <statefs/provider.hpp>
 #include <statefs/property.hpp>
@@ -19,6 +20,7 @@ namespace statefs { namespace connman {
 
 typedef NetConnmanManagerInterface Manager;
 typedef NetConnmanServiceInterface Service;
+typedef NetConnmanTechnologyInterface Technology;
 using statefs::qt::ServiceWatch;
 
 class InternetNs;

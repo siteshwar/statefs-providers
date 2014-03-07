@@ -13,7 +13,8 @@ link_directories(
 
 set(MGR_IF net.connman.manager.xml)
 set(SVC_IF net.connman.service.xml)
-set(ALL_IF ${MGR_IF} ${SVC_IF})
+set(TEC_IF net.connman.technology.xml)
+set(ALL_IF ${MGR_IF} ${SVC_IF} ${TEC_IF})
 set_source_files_properties(${ALL_IF}
   PROPERTIES INCLUDE dbus_types.hpp
   )
@@ -24,6 +25,7 @@ set_source_files_properties(${ALL_IF}
 
 qt5_add_dbus_interface(SRC ${MGR_IF} manager_interface)
 qt5_add_dbus_interface(SRC ${SVC_IF} service_interface)
+qt5_add_dbus_interface(SRC ${TEC_IF} technology_interface)
 # qt5_wrap_cpp(STATEFS_QT_SRC ${STATEFS_QT_HEADERS})
 
 add_library(provider-${SELF} SHARED
