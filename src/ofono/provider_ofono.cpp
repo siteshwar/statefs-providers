@@ -260,9 +260,7 @@ static const status_array_type ofono_status_ = {{
     , "searching", "denied", "unknown", "roaming"
     }};
 
-static const std::array<bool, size_t(Status::EOE)> status_registered_ = {{
-    false, false, true, false, false, false, true
-    }};
+static const std::bitset<size_t(Status::EOE)> status_registered_("0010001");
 
 static const std::map<QString, QString> sim_props_map_ = {
     { "MobileCountryCode", "HomeMCC" }
@@ -390,14 +388,16 @@ void Bridge::set_status(Status new_status)
     if (expected != set_name_)
         set_name_ = expected;
 
-    auto iwas = static_cast<size_t>(status_);
-    auto inew = static_cast<size_t>(new_status);
-    auto is_registered = status_registered_[inew];
+    auto is_registered = is_set(status_registered_, new_status)
+        , was_registered = is_set(status_registered_, status_);
+    auto is_changed = (was_registered != is_registered);
 
-    status_ = new_status;
+    auto inew = static_cast<size_t>(new_status);
+
     updateProperty("RegistrationStatus", ckit_status_[inew]);
 
-   if (is_registered != status_registered_[iwas]) {
+    status_ = new_status;
+    if (is_changed) {
         qDebug() << (is_registered ? "Registered" : "Unregistered");
         if (is_registered) {
             if (!modem_) {
