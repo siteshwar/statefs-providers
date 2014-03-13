@@ -26,10 +26,12 @@
  */
 
 #include "provider_ofono.hpp"
+#include "dbus_types.hpp"
+#include <statefs/qt/dbus.hpp>
+
 #include <math.h>
 #include <iostream>
-#include <statefs/qt/dbus.hpp>
-#include "dbus_types.hpp"
+#include <set>
 
 #ifdef DEBUG
 #define DBG qDebug
@@ -48,9 +50,126 @@ namespace statefs { namespace ofono {
 using statefs::qt::Namespace;
 using statefs::qt::PropertiesSource;
 using statefs::qt::sync;
+using statefs::qt::async;
 
 static char const *service_name = "org.ofono";
 
+Interface& operator ++(Interface &v)
+{
+    auto i = static_cast<int>(v);
+    v = (++i <= static_cast<int>(Interface::EOE)
+         ? static_cast<Interface>(i)
+         : Interface::AssistedSatelliteNavigation);
+    return v;
+}
+
+static const char *interface_names[] = {
+    "AssistedSatelliteNavigation",
+    "AudioSettings",
+    "CallBarring",
+    "CallForwarding",
+    "CallMeter",
+    "CallSettings",
+    "CallVolume",
+    "CellBroadcast",
+    "Handsfree",
+    "LocationReporting",
+    "MessageManager",
+    "MessageWaiting",
+    "NetworkRegistration",
+    "Phonebook",
+    "PushNotification",
+    "RadioSettings",
+    "SimManager",
+    "SmartMessaging",
+    "SimToolkit",
+    "SupplementaryServices",
+    "TextTelephony",
+    "VoiceCallManager"
+};
+
+static_assert(sizeof(interface_names)/sizeof(interface_names[0])
+              == (size_t)Interface::EOE, "Check interfaces list");
+
+
+static QDebug operator << (QDebug dst, interfaces_set_type const &src)
+{
+    dst << "Cellular_interfaces=(";
+    for (auto i = Interface::AssistedSatelliteNavigation; i != Interface::EOE; ++i)
+        if (src[(size_t)i])
+            dst << interface_names[(size_t)i] << ",";
+
+    dst << ")";
+    return dst;
+}
+
+#define MK_IFACE_ID(name) {#name, Interface::name}
+
+static const std::map<QString, Interface> interface_ids = {
+    MK_IFACE_ID(AssistedSatelliteNavigation),
+    MK_IFACE_ID(AudioSettings),
+    MK_IFACE_ID(CallBarring),
+    MK_IFACE_ID(CallForwarding),
+    MK_IFACE_ID(CallMeter),
+    MK_IFACE_ID(CallSettings),
+    MK_IFACE_ID(CallVolume),
+    MK_IFACE_ID(CellBroadcast),
+    MK_IFACE_ID(Handsfree),
+    MK_IFACE_ID(LocationReporting),
+    MK_IFACE_ID(MessageManager),
+    MK_IFACE_ID(MessageWaiting),
+    MK_IFACE_ID(NetworkRegistration),
+    MK_IFACE_ID(Phonebook),
+    MK_IFACE_ID(PushNotification),
+    MK_IFACE_ID(RadioSettings),
+    MK_IFACE_ID(SimManager),
+    MK_IFACE_ID(SmartMessaging),
+    MK_IFACE_ID(SimToolkit),
+    MK_IFACE_ID(SupplementaryServices),
+    MK_IFACE_ID(TextTelephony),
+    MK_IFACE_ID(VoiceCallManager)
+};
+
+static interfaces_set_type get_interfaces(QStringList const &from)
+{
+    static const QString std_prefix = "org.ofono.";
+    static const auto prefix_len = std_prefix.length();
+
+    interfaces_set_type res;
+    for (auto const &v : from) {
+        if (v.left(prefix_len) != std_prefix)
+            continue;
+
+        auto p = interface_ids.find(v.mid(prefix_len));
+        if (p != interface_ids.end())
+            res.set((size_t)p->second);
+    }
+    return res;
+}
+
+enum class State { UnchangedSet, UnchangedReset, Set, Reset };
+
+static inline bool is_set(State s)
+{
+    return (s == State::UnchangedSet || s == State::Set);
+}
+
+template <typename T>
+static bool is_set(std::bitset<(size_t)T::EOE> const &src, T id)
+{
+    return src[static_cast<size_t>(id)];
+}
+
+static State get_state_change(interfaces_set_type const &before
+                              , interfaces_set_type const &now
+                              , Interface id)
+{
+    auto i = (size_t)id;
+    auto from = before[i], to = now[i];
+    return (from == to
+            ? (to ? State::UnchangedSet : State::UnchangedReset)
+            : (to ? State::Set : State::Reset));
+}
 
 template <typename K, typename F, typename ... Args>
 void map_exec(std::map<K, F> const &fns, K const &k, Args&&... args)
@@ -141,9 +260,7 @@ static const status_array_type ofono_status_ = {{
     , "searching", "denied", "unknown", "roaming"
     }};
 
-static const std::array<bool, size_t(Status::EOE)> status_registered_ = {{
-    false, false, true, false, false, false, true
-    }};
+static const std::bitset<size_t(Status::EOE)> status_registered_("0010001");
 
 static const std::map<QString, QString> sim_props_map_ = {
     { "MobileCountryCode", "HomeMCC" }
@@ -271,14 +388,16 @@ void Bridge::set_status(Status new_status)
     if (expected != set_name_)
         set_name_ = expected;
 
-    auto iwas = static_cast<size_t>(status_);
-    auto inew = static_cast<size_t>(new_status);
-    auto is_registered = status_registered_[inew];
+    auto is_registered = is_set(status_registered_, new_status)
+        , was_registered = is_set(status_registered_, status_);
+    auto is_changed = (was_registered != is_registered);
 
-    status_ = new_status;
+    auto inew = static_cast<size_t>(new_status);
+
     updateProperty("RegistrationStatus", ckit_status_[inew]);
 
-   if (is_registered != status_registered_[iwas]) {
+    status_ = new_status;
+    if (is_changed) {
         qDebug() << (is_registered ? "Registered" : "Unregistered");
         if (is_registered) {
             if (!modem_) {
@@ -329,30 +448,42 @@ void Bridge::reset_stk()
     updateProperty("StkIdleModeText", "");
 }
 
-void Bridge::process_features(QStringList const &v)
+void Bridge::process_interfaces(QStringList const &v)
 {
-    auto features = QSet<QString>::fromList(v);
-    qDebug() << "Cellular features: " << features;
-    supports_stk_ = features.contains("stk");
+    auto interfaces = get_interfaces(v);
+    qDebug() << interfaces;
 
-    bool has_sim_feature = features.contains("sim");
-    if (!has_sim_feature) {
-        qDebug() << "No sim feature";
-        reset_sim();
-        return;
-    } else if (!sim_) {
+    auto on_exit = cor::on_scope_exit([this, interfaces]() {
+            interfaces_ = interfaces;
+        });
+
+    auto state = [this, interfaces](Interface id) {
+        return get_state_change(interfaces_, interfaces, id);
+    };
+
+    auto sim_state = state(Interface::SimManager);
+    if (sim_state == State::Reset) {
+        if (sim_) {
+            reset_sim();
+            return;
+        }
+    } else if (sim_state == State::Set) {
         setup_sim(modem_path_);
     }
-    bool has_net = features.contains("net");
-    if (network_) {
-        if (has_sim_feature && !has_net)
-            reset_network();
-    } else if (has_net && has_sim_) {
+
+    auto net_state = state(Interface::NetworkRegistration);
+    if (net_state == State::Reset) {
+        reset_network();
+    } else if (net_state == State::Set) {
+        if (is_set(sim_state))
+            qWarning() << "Cellular NetworkRegistration w/o SimManager!";
         setup_network(modem_path_);
     }
-    if (supports_stk_ && !stk_)
+
+    auto stk_state = state(Interface::SimToolkit);
+    if (stk_state == State::Set)
         setup_stk(modem_path_);
-    else if (!supports_stk_ && stk_)
+    else if (stk_state == State::Reset)
         reset_stk();
 }
 
@@ -366,8 +497,8 @@ bool Bridge::setup_modem(QString const &path, QVariantMap const &props)
 
     auto update = [this](QString const &n, QVariant const &v) {
         DBG() << "Modem prop: " << n << "=" << v;
-        if (n == "Features")
-            process_features(v.toStringList());
+        if (n == "Interfaces")
+            process_interfaces(v.toStringList());
         else if (n == "Powered") {
             if (!v.toBool() && !sim_)
                 reset_sim();
@@ -465,6 +596,13 @@ void Bridge::setup_network(QString const &path)
     };
 
     network_.reset(new Network(service_name, path, bus_));
+
+    DBG() << "Connect Network::PropertyChanged";
+    connect(network_.get(), &Network::PropertyChanged
+            , [update](QString const &n, QDBusVariant const &v) {
+                update(n, v.variant());
+            });
+
     auto res = sync(network_->GetProperties());
     if (res.isError()) {
         qWarning() << "Network GetProperties error:" << res.error();
@@ -475,15 +613,8 @@ void Bridge::setup_network(QString const &path)
     for (auto it = props.begin(); it != props.end(); ++it)
         update(it.key(), it.value());
 
-    if (!network_) {
+    if (!network_)
         qDebug() << "No network interface";
-        return;
-    }
-    DBG() << "Connect Network::PropertyChanged";
-    connect(network_.get(), &Network::PropertyChanged
-            , [update](QString const &n, QDBusVariant const &v) {
-                update(n, v.variant());
-            });
 }
 
 void Bridge::setup_stk(QString const &path)
@@ -575,7 +706,7 @@ void Bridge::setup_sim(QString const &path)
                     update(n, v.variant());
                 });
 
-        if (supports_stk_)
+        if (is_set(interfaces_, Interface::SimToolkit))
             setup_stk(modem_path_);
     }
 }

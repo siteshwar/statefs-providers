@@ -59,7 +59,7 @@ BuildRequires: pkgconfig(statefs-qt5) >= 0.2.42
 %package qt5-devel
 Summary: StateFS Qt5 library for providers, development files
 Group: Development/Libraries
-Requires: statefs-providers-qt5 = %{version}-%{release}
+Requires: statefs-provider-qt5 = %{version}-%{release}
 %description qt5-devel
 %{summary}
 
