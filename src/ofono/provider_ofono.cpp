@@ -72,6 +72,7 @@ static const char *interface_names[] = {
     "CallSettings",
     "CallVolume",
     "CellBroadcast",
+    "ConnectionManager",
     "Handsfree",
     "LocationReporting",
     "MessageManager",
@@ -114,6 +115,7 @@ static const std::map<QString, Interface> interface_ids = {
     MK_IFACE_ID(CallSettings),
     MK_IFACE_ID(CallVolume),
     MK_IFACE_ID(CellBroadcast),
+    MK_IFACE_ID(ConnectionManager),
     MK_IFACE_ID(Handsfree),
     MK_IFACE_ID(LocationReporting),
     MK_IFACE_ID(MessageManager),
@@ -319,6 +321,9 @@ const Bridge::property_map_type Bridge::operator_property_actions_ = {
     { "Name", bind_member(&Bridge::set_operator_name)}
 };
 
+const Bridge::property_map_type Bridge::connman_property_actions_ = {
+    { "RoamingAllowed", direct_update("DataRoamingAllowed") }
+};
 
 Bridge::Bridge(MainNs *ns, QDBusConnection &bus)
     : PropertiesSource(ns)
@@ -413,11 +418,26 @@ void Bridge::set_status(Status new_status)
     }
 }
 
+void Bridge::update_mms_context()
+{
+    mmsContext_ = QString();
+    for (auto iter = connectionContexts_.begin(); iter != connectionContexts_.end(); ++iter) {
+        if (iter->second.properties["Type"].toString() == "mms"
+                && !iter->second.properties["MessageCenter"].toString().isEmpty()) {
+            mmsContext_ = iter->first;
+            break;
+        }
+    }
+    updateProperty("MMSContext", mmsContext_);
+    DBG() << "updated MMS context" << mmsContext_;
+}
+
 void Bridge::reset_modem()
 {
     qDebug() << "Reset modem properties";
     modem_path_ = "";
     modem_.reset();
+    reset_connectionManager();
     reset_sim();
 }
 
@@ -485,6 +505,12 @@ void Bridge::process_interfaces(QStringList const &v)
         setup_stk(modem_path_);
     else if (stk_state == State::Reset)
         reset_stk();
+
+    auto cm_state = state(Interface::ConnectionManager);
+    if (cm_state == State::Set)
+        setup_connectionManager(modem_path_);
+    else if (cm_state == State::Reset)
+        reset_connectionManager();
 }
 
 bool Bridge::setup_modem(QString const &path, QVariantMap const &props)
@@ -654,6 +680,84 @@ void Bridge::setup_stk(QString const &path)
             });
 }
 
+void Bridge::reset_connectionManager()
+{
+    qDebug() << "Reset connection manager";
+    connectionManager_.reset();
+    connectionContexts_.clear();
+    update_mms_context();
+}
+
+void Bridge::setup_connectionManager(QString const &path)
+{
+    qDebug() << "Setup connection manager" << path;
+
+    auto update = [this](QString const &n, QVariant const &v) {
+        DBG() << "CM prop: " << n << "=" << v;
+        map_exec(connman_property_actions_, n, this, v);
+    };
+
+    auto contextAdded = [this](QDBusObjectPath const &c, QVariantMap const &m) {
+        DBG() << "CM: context added" << c.path() << "=" << m;
+
+        const QString &contextPath = c.path();
+        ConnectionCache &connection = connectionContexts_[contextPath];
+        connection.context.reset(new ConnectionContext(service_name, contextPath, bus_));
+
+        connect(connection.context.get(), &ConnectionContext::PropertyChanged
+                , [this,contextPath](QString const &p, QDBusVariant const &v) {
+                    connectionContexts_[contextPath].properties.insert(p, v.variant());
+                    update_mms_context();
+                });
+
+        connection.properties = m;
+        update_mms_context();
+    };
+
+    auto contextRemoved = [this](QDBusObjectPath const &c) {
+        DBG() << "CM: context removed" << c.path();
+        connectionContexts_.erase(c.path());
+        update_mms_context();
+    };
+
+    connectionManager_.reset(new ConnectionManager(service_name, path, bus_));
+
+    connect(connectionManager_.get(), &ConnectionManager::PropertyChanged
+            , [update](QString const &n, QDBusVariant const &v) {
+                update(n, v.variant());
+            });
+    connect(connectionManager_.get(), &ConnectionManager::ContextAdded
+            , [contextAdded](QDBusObjectPath const &c, QVariantMap const &m) {
+                contextAdded(c, m);
+            });
+    connect(connectionManager_.get(), &ConnectionManager::ContextRemoved
+            , [contextRemoved](QDBusObjectPath const &c) {
+                contextRemoved(c);
+            });
+
+    auto res = sync(connectionManager_->GetProperties());
+    if (res.isError()) {
+        qWarning() << "ConnectionManager GetProperties error:" << res.error();
+        return;
+    }
+    auto props = res.value();
+    for (auto it = props.begin(); it != props.end(); ++it)
+        update(it.key(), it.value());
+
+    auto contexts_res = sync(connectionManager_->GetContexts());
+    if (contexts_res.isError()) {
+        qWarning() << "ConnectionManager GetContexts error:" << contexts_res.error();
+        return;
+    }
+
+    auto contexts = contexts_res.value();
+    DBG() << "Got contexts" << contexts.count();
+    for (auto it = contexts.begin(); it != contexts.end(); ++it) {
+        auto const &info = *it;
+        contextAdded(std::get<0>(info), std::get<1>(info));
+    }
+}
+
 void Bridge::enumerate_operators()
 {
     if (!network_) {
@@ -741,6 +845,8 @@ MainNs::MainNs(QDBusConnection &bus)
             , { "HomeMCC", "0"}
             , { "HomeMNC", "0"}
             , { "StkIdleModeText", ""}
+            , { "MMSContext", ""}
+            , { "DataRoamingAllowed", "0"}
         })
 {
     for (auto v : defaults_)

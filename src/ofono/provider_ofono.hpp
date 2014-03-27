@@ -5,6 +5,8 @@
 #include "net_interface.h"
 #include "sim_interface.h"
 #include "stk_interface.h"
+#include "connectionmanager_interface.h"
+#include "connectioncontext_interface.h"
 
 #include <statefs/provider.hpp>
 #include <statefs/property.hpp>
@@ -27,6 +29,8 @@ typedef OrgOfonoNetworkOperatorInterface Operator;
 typedef OrgOfonoModemInterface Modem;
 typedef OrgOfonoSimManagerInterface SimManager;
 typedef OrgOfonoSimToolkitInterface SimToolkit;
+typedef OrgOfonoConnectionManagerInterface ConnectionManager;
+typedef OrgOfonoConnectionContextInterface ConnectionContext;
 using statefs::qt::ServiceWatch;
 
 enum class Interface {
@@ -38,6 +42,7 @@ enum class Interface {
     CallSettings,
     CallVolume,
     CellBroadcast,
+    ConnectionManager,
     Handsfree,
     LocationReporting,
     MessageManager,
@@ -56,13 +61,19 @@ enum class Interface {
     EOE
 };
 
+struct ConnectionCache
+{
+    std::unique_ptr<ConnectionContext> context;
+    QVariantMap properties;
+};
+
 typedef std::bitset<(size_t)Interface::EOE> interfaces_set_type;
 
 class MainNs;
 
 class Bridge : public QObject, public statefs::qt::PropertiesSource
 {
-    Q_OBJECT;
+    Q_OBJECT
 public:
     Bridge(MainNs *, QDBusConnection &bus);
 
@@ -84,6 +95,7 @@ public:
     void set_operator_name(QVariant const &);
     void set_name_home();
     void set_name_roaming();
+    void update_mms_context();
 
 private:
 
@@ -92,10 +104,12 @@ private:
     void setup_sim(QString const &);
     void setup_network(QString const &);
     void setup_stk(QString const &);
+    void setup_connectionManager(QString const &);
     void reset_sim();
     void reset_network();
     void reset_modem();
     void reset_stk();
+    void reset_connectionManager();
     void process_interfaces(QStringList const&);
     void enumerate_operators();
 
@@ -107,6 +121,8 @@ private:
     std::unique_ptr<Operator> operator_;
     std::unique_ptr<SimManager> sim_;
     std::unique_ptr<SimToolkit> stk_;
+    std::unique_ptr<ConnectionManager> connectionManager_;
+    std::map<QString,ConnectionCache> connectionContexts_;
     ServiceWatch watch_;
 
     bool has_sim_;
@@ -117,9 +133,11 @@ private:
 
     QString modem_path_;
     QString operator_path_;
+    QString mmsContext_;
 
     static const property_map_type net_property_actions_;
     static const property_map_type operator_property_actions_;
+    static const property_map_type connman_property_actions_;
 };
 
 class MainNs : public statefs::qt::Namespace
