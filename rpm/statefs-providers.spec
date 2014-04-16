@@ -416,7 +416,7 @@ BuildArch: noarch
 
 
 %build
-%cmake -DSTATEFS_QT_VERSION=%{version} %{?_with_multiarch:-DENABLE_MULTIARCH=ON}
+%cmake -DVERSION=%{version} %{?_with_multiarch:-DENABLE_MULTIARCH=ON}
 make %{?jobs:-j%jobs}
 make doc
 pushd inout && %cmake && popd
