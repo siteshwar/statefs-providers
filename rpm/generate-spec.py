@@ -27,7 +27,6 @@ Summary: Statefs provider{summary}
 Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
-Requires: %{{n_common}} = %{{version}}-%{{release}}
 {extra}
 {obsoletes}
 {provides}

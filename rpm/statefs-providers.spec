@@ -227,7 +227,6 @@ Summary: Statefs provider, source - sysfs/udev
 Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
-Requires: %{n_common} = %{version}-%{release}
 BuildRequires: boost-filesystem >= 1.51.0
 BuildRequires: boost-devel >= 1.51.0
 BuildRequires: pkgconfig(cor-udev) >= 0.1.11
@@ -252,7 +251,6 @@ Summary: Statefs provider, source - bme
 Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
-Requires: %{n_common} = %{version}-%{release}
 Requires: bme-rm-680-bin >= 0.9.95
 Obsoletes: contextkit-meego-battery-upower <= %{meego_ver}
 Provides: contextkit-meego-battery-upower = %{meego_ver1}
@@ -274,7 +272,6 @@ Summary: Statefs provider, source - back_cover
 Group: System Environment/Libraries
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
-Requires: %{n_common} = %{version}-%{release}
 %description -n statefs-provider-back-cover
 %{summary}
 
