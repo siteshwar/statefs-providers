@@ -6,7 +6,7 @@
 %define maemo_ver1 0.7.31
 %define meego_ver 0.1.0
 %define meego_ver1 0.1.0.1
-%define statefs_ver 0.3.24
+%define statefs_ver 0.3.25
 
 Summary: Statefs providers
 Name: statefs-providers
@@ -32,7 +32,7 @@ BuildRequires: statefs >= %{statefs_ver}
 BuildRequires: pkgconfig(statefs-cpp) >= %{statefs_ver}
 BuildRequires: pkgconfig(Qt5Core)
 BuildRequires: pkgconfig(Qt5DBus)
-BuildRequires: pkgconfig(cor) >= 0.1.8
+BuildRequires: pkgconfig(cor) >= 0.1.14
 
 %description
 %{summary}
@@ -93,7 +93,7 @@ Requires: statefs-provider-qt5 = %{version}-%{release}
 
 
 %build
-%cmake -DSTATEFS_QT_VERSION=%{version} %{?_with_multiarch:-DENABLE_MULTIARCH=ON}
+%cmake -DVERSION=%{version} %{?_with_multiarch:-DENABLE_MULTIARCH=ON}
 make %{?jobs:-j%jobs}
 make doc
 pushd inout && %cmake && popd
